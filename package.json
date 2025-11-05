@@ -1,0 +1,39 @@
+{
+  "name": "knowit-suite",
+  "description": "Knowit Suite – fast Playwright tests for website quality",
+  "author": "Knowit Experience Oy",
+  "license": "MIT",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "about:install": "echo 'Playwright requires this install'",
+    "install": "npx playwright install",
+    "about:lint": "echo 'Run ESLint'",
+    "lint": "eslint . *.js",
+    "about:format": "echo 'Run Prettier'",
+    "format": "prettier --write .",
+    "test": "npx playwright test",
+    "test:clean": "npx playwright test --update-snapshots",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@eslint/js": "^9.18.0",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.6",
+    "axe-html-reporter": "^2.2.11",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.18.0",
+    "globals": "^15.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.1",
+    "prettier": "^3.4.2"
+  }
+}

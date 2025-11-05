@@ -1,0 +1,20 @@
+# KnowIt Experience - EditorConfig 2024
+# 4 spaces for PHP, Twig files
+# 2 spaces for SCSS, CSS, JS and everything else
+# editorconfig.org
+
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.php]
+indent_size = 4
+
+[*.twig]
+indent_size = 4

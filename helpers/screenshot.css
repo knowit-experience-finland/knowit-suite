@@ -1,0 +1,36 @@
+#modal-newsletter-subscribe {
+  display: none !important;
+}
+
+body.modal-open {
+  overflow: auto !important;
+}
+
+.modal-backdrop {
+  display: none !important;
+}
+
+#CybotCookiebotDialog,
+#CookieBanner {
+  display: none !important;
+}
+
+/* Turn embeds into checkered elements */
+.embed-responsive:before {
+  background-image: repeating-linear-gradient(
+    45deg,
+    #d3d3d3,
+    /* Light grey */ #d3d3d3 21px,
+    #a9a9a9 21px,
+    #a9a9a9 47px
+  );
+  background-size: 30px 30px;
+}
+.embed-responsive .embed-responsive-item {
+  visibility: hidden;
+}
+
+/* Hide Shadow environment indicator */
+#shadow-indicator {
+  display: none !important;
+}
