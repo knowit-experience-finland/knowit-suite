@@ -9,6 +9,7 @@ dotenv.config();
  */
 export default defineConfig({
   testDir: './tests',
+  testMatch: '**/*.spec.js',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -20,7 +21,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: [['html'], ['json', { outputFile: 'test-results/results.json' }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Ignore SSL errors */
@@ -38,6 +39,14 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: '**/sitemap.spec.js',
+    },
+    {
+      name: 'sitemap-chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '**/sitemap.spec.js',
+      fullyParallel: false,
+      workers: 1,
     },
   ],
   expect: {

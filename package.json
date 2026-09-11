@@ -14,6 +14,7 @@
     "about:format": "echo 'Run Prettier'",
     "format": "prettier --write .",
     "test": "npx playwright test",
+    "test:sitemap": "node --test tests/sitemap.unit.test.js",
     "test:clean": "npx playwright test --update-snapshots",
     "prepare": "husky"
   },
@@ -31,6 +32,7 @@
     "axe-html-reporter": "^2.2.11",
     "dotenv": "^16.4.7",
     "eslint": "^9.18.0",
+    "fast-xml-parser": "^5.11.1",
     "globals": "^15.14.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.1",

@@ -3,6 +3,7 @@ import { test, expect } from '../helpers/fixture-axe-test.js';
 import { createHtmlReport } from 'axe-html-reporter';
 import { stubCookiebot } from '../helpers/helperCookiebotBlock.js';
 import { blockImages } from '../helpers/blockImages.js';
+import { attachJson } from '../helpers/attachJson.js';
 
 test.beforeEach(async ({ context }) => {
   await stubCookiebot(context);
@@ -34,6 +35,10 @@ getUrls().forEach((url) => {
       const violations = accessibilityScanResults.violations.length;
 
       if (violations) {
+        await attachJson(testInfo, 'accessibility-violations.json', {
+          url,
+          violations: accessibilityScanResults.violations,
+        });
         await testInfo.attach('accessibility-scan-results.html', {
           body: reportHTML,
           contentType: 'text/html',

@@ -2,6 +2,7 @@ import { getUrls, urlToPath } from '../urls.js';
 import { expect, test } from '@playwright/test';
 import { stubCookiebot } from '../helpers/helperCookiebotBlock.js';
 import { blockImages } from '../helpers/blockImages.js';
+import { attachJson } from '../helpers/attachJson.js';
 
 let logs = [];
 
@@ -48,6 +49,10 @@ getUrls().forEach((url) => {
         .join('\n');
 
       if (logs?.length > 0) {
+        await attachJson(testInfo, 'console-errors.json', {
+          url,
+          errors: logs,
+        });
         await testInfo.attach('console logs', {
           body: errorLogs.toString(),
           contentType: 'text/plain',

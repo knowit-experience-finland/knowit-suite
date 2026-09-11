@@ -59,6 +59,48 @@ You can override these on the command line when needed:
 BASE_URL="https://knowit.fi" URL_CATEGORY="production" npx playwright test
 ```
 
+## Sitemap scan
+
+Set `SITEMAP_SCAN=true` to run additional accessibility and JavaScript error
+checks for every same-origin URL found in the site's sitemap. The manually
+configured URL tests continue to run as before, and sitemap URLs are not added
+to visual regression tests.
+
+By default, the suite first requests `${BASE_URL}/sitemap.xml` and falls back to
+`${BASE_URL}/sitemap_index.xml`. Both regular sitemaps and sitemap indexes are
+supported, including nested indexes. Use `SITEMAP_URL` to override the root
+sitemap location.
+
+Sitemap tests run serially and wait 1000 milliseconds between page navigations
+by default. Increase `SITEMAP_THROTTLE_MS` if the target responds with HTTP 429,
+or set it to `0` to disable the delay.
+
+```bash
+SITEMAP_SCAN=true npx playwright test sitemap.spec.js
+```
+
+```bash
+SITEMAP_SCAN=true SITEMAP_URL="https://knowit.fi/custom-sitemap.xml" npx playwright test sitemap.spec.js
+```
+
+For example, to wait three seconds between page navigations:
+
+```bash
+SITEMAP_SCAN=true SITEMAP_THROTTLE_MS=3000 npx playwright test sitemap.spec.js
+```
+
+The run fails if the configured sitemap cannot be fetched or parsed. Run the
+sitemap reader's unit tests with `npm run test:sitemap`.
+
+## Reports
+
+Every test run creates both the normal HTML report in `playwright-report/` and
+a machine-readable Playwright report in `test-results/results.json`. Failed
+accessibility checks include an `accessibility-violations.json` attachment, and
+console failures include a `console-errors.json` attachment. These structured
+attachments contain the tested URL and the complete issue data for later
+aggregation or summary generation.
+
 ## Adding new tests
 
 To test new URLs with the default specs (accessibility, regression, and error), update `urls.js`. Custom scenarios live in `tests/`; create a new `.spec.js` there when you need something bespoke.
