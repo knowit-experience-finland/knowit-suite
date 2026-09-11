@@ -101,6 +101,20 @@ console failures include a `console-errors.json` attachment. These structured
 attachments contain the tested URL and the complete issue data for later
 aggregation or summary generation.
 
+Create a grouped summary where each unique issue lists all affected URLs:
+
+```bash
+npm run report:summary
+```
+
+The command reads `test-results/results.json` and writes
+`test-results/summary.json`. Optional input and output paths can be passed after
+`--`, for example:
+
+```bash
+npm run report:summary -- archived-results.json reports/summary.json
+```
+
 ## Adding new tests
 
 To test new URLs with the default specs (accessibility, regression, and error), update `urls.js`. Custom scenarios live in `tests/`; create a new `.spec.js` there when you need something bespoke.
