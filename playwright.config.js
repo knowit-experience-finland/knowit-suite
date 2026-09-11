@@ -26,6 +26,8 @@ export default defineConfig({
   use: {
     /* Ignore SSL errors */
     ignoreHTTPSErrors: true,
+    /* Prefer reduced motion for more stable and accessible test runs. */
+    reducedMotion: 'reduce',
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.BASE_URL,
 
@@ -39,7 +41,7 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: '**/sitemap.spec.js',
+      testIgnore: ['**/sitemap.spec.js', '**/sitemap-summary.spec.js'],
     },
     {
       name: 'sitemap-chromium',
@@ -47,6 +49,11 @@ export default defineConfig({
       testMatch: '**/sitemap.spec.js',
       fullyParallel: false,
       workers: 1,
+      teardown: 'sitemap-summary',
+    },
+    {
+      name: 'sitemap-summary',
+      testMatch: '**/sitemap-summary.spec.js',
     },
   ],
   expect: {

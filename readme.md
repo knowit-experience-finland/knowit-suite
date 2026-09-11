@@ -117,6 +117,16 @@ The command reads `test-results/results.json` and writes
 `test-results/summary.json`. Optional input and output paths can be passed after
 `--`, for example:
 
+Each grouped accessibility issue also contains its unique Axe `nodes`. An
+identical node appears once with a deduplicated `urls` list, preserving its
+selectors, HTML and failure details while showing every affected page.
+
+For sitemap runs, a final `Issue summary` teardown test also generates
+`summary.json` and `summary.html` and attaches both files to Playwright's native
+HTML report. The teardown runs after the sitemap project even when page tests
+fail, so the report retains the issues collected before and after individual
+failures.
+
 ```bash
 npm run report:summary -- archived-results.json reports/summary.json
 ```

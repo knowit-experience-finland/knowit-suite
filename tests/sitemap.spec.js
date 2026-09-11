@@ -1,7 +1,7 @@
 import { createHtmlReport } from 'axe-html-reporter';
 import { expect, test } from '../helpers/fixture-axe-test.js';
 import { blockImages } from '../helpers/blockImages.js';
-import { attachJson } from '../helpers/attachJson.js';
+import { attachJson, recordTestFailure } from '../helpers/attachJson.js';
 import { stubCookiebot } from '../helpers/helperCookiebotBlock.js';
 import {
   getSitemapThrottleMs,
@@ -19,6 +19,12 @@ let previousNavigationStartedAt = 0;
 test.beforeEach(async ({ context }) => {
   await stubCookiebot(context);
   await blockImages(context);
+});
+
+// Playwright requires the fixtures argument before testInfo.
+// eslint-disable-next-line no-empty-pattern
+test.afterEach(async ({}, testInfo) => {
+  await recordTestFailure(testInfo);
 });
 
 const throttleNavigation = async () => {

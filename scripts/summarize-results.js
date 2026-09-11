@@ -50,9 +50,11 @@ export const summarizeReport = (report) => {
             if (attachment.name === 'accessibility-violations.json') {
               hasStructuredIssues = true;
               for (const violation of data.violations ?? []) {
+                const issueKey = `accessibility:${violation.id}`;
+                const url = data.url ?? fallbackUrl;
                 addIssue(
                   issues,
-                  `accessibility:${violation.id}`,
+                  issueKey,
                   {
                     type: 'accessibility',
                     id: violation.id,
@@ -61,8 +63,20 @@ export const summarizeReport = (report) => {
                     description: violation.description,
                     helpUrl: violation.helpUrl,
                   },
-                  data.url ?? fallbackUrl
+                  url
                 );
+
+                const groupedIssue = issues.get(issueKey);
+                groupedIssue.nodeMap ??= new Map();
+                for (const node of violation.nodes ?? []) {
+                  const nodeKey = JSON.stringify(node);
+                  const groupedNode = groupedIssue.nodeMap.get(nodeKey) ?? {
+                    ...node,
+                    urls: new Set(),
+                  };
+                  if (url) groupedNode.urls.add(url);
+                  groupedIssue.nodeMap.set(nodeKey, groupedNode);
+                }
               }
             }
 
@@ -77,6 +91,19 @@ export const summarizeReport = (report) => {
                     errorType: error.type,
                     error: error.message,
                   },
+                  data.url ?? fallbackUrl
+                );
+              }
+            }
+
+            if (attachment.name === 'test-errors.json') {
+              hasStructuredIssues = true;
+              for (const error of data.errors ?? []) {
+                if (!error.message) continue;
+                addIssue(
+                  issues,
+                  `test:${error.message}`,
+                  { type: 'test', error: error.message },
                   data.url ?? fallbackUrl
                 );
               }
@@ -101,7 +128,25 @@ export const summarizeReport = (report) => {
   }
 
   const summarizedIssues = [...issues.values()]
-    .map((issue) => ({ ...issue, urls: [...issue.urls].sort() }))
+    .map((issue) => {
+      const summarized = {
+        ...issue,
+        urls: [...issue.urls].sort(),
+      };
+      delete summarized.nodeMap;
+      if (issue.nodeMap) {
+        summarized.nodes = [...issue.nodeMap.values()]
+          .map((node) => ({ ...node, urls: [...node.urls].sort() }))
+          .sort(
+            (left, right) =>
+              right.urls.length - left.urls.length ||
+              JSON.stringify(left.target).localeCompare(
+                JSON.stringify(right.target)
+              )
+          );
+      }
+      return summarized;
+    })
     .sort(
       (left, right) =>
         right.urls.length - left.urls.length ||
@@ -117,6 +162,74 @@ export const summarizeReport = (report) => {
     },
     issues: summarizedIssues,
   };
+};
+
+export const summarizeFragments = (fragments) =>
+  summarizeReport({
+    suites: [
+      {
+        specs: fragments.map((fragment) => ({
+          tests: [
+            {
+              results: [
+                {
+                  status: 'failed',
+                  attachments: [
+                    {
+                      name: fragment.name,
+                      contentType: 'application/json',
+                      body: Buffer.from(JSON.stringify(fragment.data)).toString(
+                        'base64'
+                      ),
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        })),
+      },
+    ],
+  });
+
+const escapeHtml = (value) =>
+  String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+
+export const renderSummaryHtml = (summary) => {
+  const issues = summary.issues
+    .map(
+      (issue) => `
+        <article>
+          <h2><span>${escapeHtml(issue.type)}</span> ${escapeHtml(issue.error)}</h2>
+          <p>${issue.urls.length} affected URL${issue.urls.length === 1 ? '' : 's'}</p>
+          <details><summary>URLs</summary><ul>${issue.urls
+            .map(
+              (url) =>
+                `<li><a href="${escapeHtml(url)}">${escapeHtml(url)}</a></li>`
+            )
+            .join('')}</ul></details>
+          ${
+            issue.nodes
+              ? `<details><summary>${issue.nodes.length} unique node${issue.nodes.length === 1 ? '' : 's'}</summary>${issue.nodes
+                  .map(
+                    (node) =>
+                      `<section><code>${escapeHtml(JSON.stringify(node.target))}</code><pre>${escapeHtml(node.html)}</pre><p>${escapeHtml(node.failureSummary)}</p><details><summary>${node.urls.length} node URL${node.urls.length === 1 ? '' : 's'}</summary><ul>${node.urls.map((url) => `<li><a href="${escapeHtml(url)}">${escapeHtml(url)}</a></li>`).join('')}</ul></details></section>`
+                  )
+                  .join('')}</details>`
+              : ''
+          }
+        </article>`
+    )
+    .join('');
+
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Issue summary</title>
+<style>body{font:16px/1.5 system-ui;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#202124}article{border:1px solid #ddd;border-radius:8px;padding:1rem;margin:1rem 0}h2{font-size:1.1rem}h2 span{font-size:.75rem;text-transform:uppercase;background:#eee;padding:.2rem .4rem;border-radius:4px}details{margin:.75rem 0}section{border-top:1px solid #eee;padding:.75rem 0}pre{white-space:pre-wrap;background:#f6f8fa;padding:.5rem;overflow:auto}a{color:#0969da}</style>
+</head><body><h1>Issue summary</h1><p>${summary.totals.issues} grouped issues affecting ${summary.totals.affectedUrls} URLs.</p>${issues || '<p>No issues found.</p>'}</body></html>`;
 };
 
 const main = async () => {
