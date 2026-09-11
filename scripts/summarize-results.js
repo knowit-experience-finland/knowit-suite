@@ -24,7 +24,7 @@ const collectSpecs = (suite, specs = []) => {
 
 const testUrl = (test, result) =>
   [...(result.annotations ?? []), ...(test.annotations ?? [])].find(
-    (annotation) => annotation.type === 'url'
+    (annotation) => annotation.type === 'url' || annotation.type === 'sitemap'
   )?.description;
 
 const addIssue = (issues, key, issue, url) => {

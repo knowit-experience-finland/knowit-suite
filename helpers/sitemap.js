@@ -37,22 +37,41 @@ const parseSitemap = (xml, sourceUrl) => {
   );
 };
 
-const fetchSitemap = async (url, fetchImpl) => {
-  let response;
-  try {
-    response = await fetchImpl(url);
-  } catch (error) {
-    throw new Error(`Failed to fetch sitemap ${url}: ${error.message}`, {
-      cause: error,
-    });
+const fetchSitemap = async (
+  url,
+  fetchImpl,
+  retries,
+  retryDelayMs,
+  waitImpl
+) => {
+  let lastError;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    let response;
+    try {
+      response = await fetchImpl(url);
+    } catch (error) {
+      lastError = new Error(
+        `Failed to fetch sitemap ${url}: ${error?.message ?? String(error)}`,
+        { cause: error }
+      );
+    }
+
+    if (response) {
+      if (response.ok) return response.text();
+
+      lastError = new Error(
+        `Failed to fetch sitemap ${url}: HTTP ${response.status} ${response.statusText}`
+      );
+      if (response.status !== 429 && response.status < 500) throw lastError;
+    }
+
+    if (attempt < retries) {
+      await waitImpl(retryDelayMs * 2 ** attempt);
+    }
   }
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch sitemap ${url}: HTTP ${response.status} ${response.statusText}`
-    );
-  }
-  return response.text();
+  throw lastError;
 };
 
 const toAbsoluteUrl = (location, parentUrl) => {
@@ -76,16 +95,34 @@ export const getSitemapThrottleMs = () => {
   return throttleMs;
 };
 
+const nonNegativeInteger = (value, name) => {
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < 0) {
+    throw new Error(`${name} must be a non-negative integer`);
+  }
+  return number;
+};
+
 /**
  * Return every unique, same-origin page URL in a sitemap tree.
  *
  * @param {{baseUrl?: string, sitemapUrl?: string, fetchImpl?: typeof fetch}} options
  * @returns {Promise<string[]>}
  */
-export const getSitemapUrls = async ({
+export const getSitemapScan = async ({
   baseUrl = process.env.BASE_URL,
   sitemapUrl = process.env.SITEMAP_URL,
   fetchImpl = fetch,
+  retries = nonNegativeInteger(
+    process.env.SITEMAP_FETCH_RETRIES ?? '2',
+    'SITEMAP_FETCH_RETRIES'
+  ),
+  retryDelayMs = nonNegativeInteger(
+    process.env.SITEMAP_RETRY_DELAY_MS ?? '1000',
+    'SITEMAP_RETRY_DELAY_MS'
+  ),
+  waitImpl = (milliseconds) =>
+    new Promise((resolve) => setTimeout(resolve, milliseconds)),
 } = {}) => {
   if (!baseUrl) {
     throw new Error('BASE_URL is required for sitemap scanning');
@@ -101,12 +138,24 @@ export const getSitemapUrls = async ({
 
   if (sitemapUrl) {
     rootUrl = new URL(sitemapUrl, base).href;
-    rootXml = await fetchSitemap(rootUrl, fetchImpl);
+    rootXml = await fetchSitemap(
+      rootUrl,
+      fetchImpl,
+      retries,
+      retryDelayMs,
+      waitImpl
+    );
   } else {
     const failures = [];
     for (const candidate of defaults) {
       try {
-        rootXml = await fetchSitemap(candidate, fetchImpl);
+        rootXml = await fetchSitemap(
+          candidate,
+          fetchImpl,
+          retries,
+          retryDelayMs,
+          waitImpl
+        );
         rootUrl = candidate;
         break;
       } catch (error) {
@@ -122,11 +171,14 @@ export const getSitemapUrls = async ({
 
   const pageUrls = new Set();
   const visitedSitemaps = new Set();
+  const errors = [];
   const visit = async (url, prefetchedXml) => {
     if (visitedSitemaps.has(url)) return;
 
     visitedSitemaps.add(url);
-    const xml = prefetchedXml ?? (await fetchSitemap(url, fetchImpl));
+    const xml =
+      prefetchedXml ??
+      (await fetchSitemap(url, fetchImpl, retries, retryDelayMs, waitImpl));
     const sitemap = parseSitemap(xml, url);
 
     if (sitemap.type === 'urlset') {
@@ -145,10 +197,20 @@ export const getSitemapUrls = async ({
       if (!childUrl) {
         throw new Error(`Invalid child sitemap URL "${location}" in ${url}`);
       }
-      await visit(childUrl.href);
+      try {
+        await visit(childUrl.href);
+      } catch (error) {
+        errors.push({ url: childUrl.href, message: error.message });
+      }
     }
   };
 
   await visit(rootUrl, rootXml);
-  return [...pageUrls];
+  return { urls: [...pageUrls], errors };
+};
+
+export const getSitemapUrls = async (options) => {
+  const scan = await getSitemapScan(options);
+  if (scan.errors.length) throw new Error(scan.errors[0].message);
+  return scan.urls;
 };

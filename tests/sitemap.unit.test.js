@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getSitemapThrottleMs, getSitemapUrls } from '../helpers/sitemap.js';
+import {
+  getSitemapScan,
+  getSitemapThrottleMs,
+  getSitemapUrls,
+} from '../helpers/sitemap.js';
 
 const response = (body, status = 200) =>
   new Response(body, {
@@ -117,4 +121,62 @@ test('uses a one-second default throttle and accepts an override', () => {
       process.env.SITEMAP_THROTTLE_MS = originalValue;
     }
   }
+});
+
+test('retries transient sitemap failures with exponential backoff', async () => {
+  let attempts = 0;
+  const waits = [];
+  const fetchImpl = async () => {
+    attempts += 1;
+    if (attempts < 3) return response('', 504);
+    return response(
+      '<urlset><url><loc>https://example.com/page</loc></url></urlset>'
+    );
+  };
+
+  assert.deepEqual(
+    await getSitemapUrls({
+      baseUrl: 'https://example.com',
+      sitemapUrl: '/custom.xml',
+      fetchImpl,
+      retries: 2,
+      retryDelayMs: 10,
+      waitImpl: async (milliseconds) => waits.push(milliseconds),
+    }),
+    ['https://example.com/page']
+  );
+  assert.equal(attempts, 3);
+  assert.deepEqual(waits, [10, 20]);
+});
+
+test('collects a failed child sitemap and continues other branches', async () => {
+  const fetchImpl = mockFetch({
+    'https://example.com/index.xml': response(`
+      <sitemapindex>
+        <sitemap><loc>https://example.com/broken.xml</loc></sitemap>
+        <sitemap><loc>https://example.com/pages.xml</loc></sitemap>
+      </sitemapindex>`),
+    'https://example.com/broken.xml': response('', 504),
+    'https://example.com/pages.xml': response(`
+      <urlset><url><loc>https://example.com/page</loc></url></urlset>`),
+  });
+
+  assert.deepEqual(
+    await getSitemapScan({
+      baseUrl: 'https://example.com',
+      sitemapUrl: '/index.xml',
+      fetchImpl,
+      retries: 0,
+    }),
+    {
+      urls: ['https://example.com/page'],
+      errors: [
+        {
+          url: 'https://example.com/broken.xml',
+          message:
+            'Failed to fetch sitemap https://example.com/broken.xml: HTTP 504 Not Found',
+        },
+      ],
+    }
+  );
 });

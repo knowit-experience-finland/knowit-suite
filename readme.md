@@ -75,6 +75,12 @@ Sitemap tests run serially and wait 1000 milliseconds between page navigations
 by default. Increase `SITEMAP_THROTTLE_MS` if the target responds with HTTP 429,
 or set it to `0` to disable the delay.
 
+Sitemap downloads retry HTTP 429, server errors, and network failures twice with
+exponential backoff. Configure this with `SITEMAP_FETCH_RETRIES` and
+`SITEMAP_RETRY_DELAY_MS`. If a child sitemap still fails, it is reported as a
+failed test while pages from the other sitemaps continue to run. Failure to load
+the root sitemap remains fatal.
+
 ```bash
 SITEMAP_SCAN=true npx playwright test sitemap.spec.js
 ```

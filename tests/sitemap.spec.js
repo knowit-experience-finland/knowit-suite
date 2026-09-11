@@ -5,19 +5,23 @@ import { attachJson } from '../helpers/attachJson.js';
 import { stubCookiebot } from '../helpers/helperCookiebotBlock.js';
 import {
   getSitemapThrottleMs,
-  getSitemapUrls,
+  getSitemapScan,
   isSitemapScanEnabled,
 } from '../helpers/sitemap.js';
 import { urlToPath } from '../urls.js';
 
-const sitemapUrls = isSitemapScanEnabled() ? await getSitemapUrls() : [];
+const sitemapScan = isSitemapScanEnabled()
+  ? await getSitemapScan()
+  : { urls: [], errors: [] };
 const throttleMs = getSitemapThrottleMs();
 let previousNavigationStartedAt = 0;
 
 test.beforeEach(async ({ context }) => {
   await stubCookiebot(context);
   await blockImages(context);
+});
 
+const throttleNavigation = async () => {
   const waitMs = Math.max(
     0,
     previousNavigationStartedAt + throttleMs - Date.now()
@@ -26,13 +30,24 @@ test.beforeEach(async ({ context }) => {
     await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
   previousNavigationStartedAt = Date.now();
-});
+};
 
-for (const url of sitemapUrls) {
+for (const sitemapError of sitemapScan.errors) {
+  test(
+    `Sitemap should be readable: ${sitemapError.url}`,
+    { annotation: { type: 'sitemap', description: sitemapError.url } },
+    async () => {
+      throw new Error(sitemapError.message);
+    }
+  );
+}
+
+for (const url of sitemapScan.urls) {
   test(
     `Sitemap page should not have WCAG A, AA violations: ${urlToPath(url)}`,
     { annotation: { type: 'url', description: url } },
     async ({ page, makeAxeBuilder }, testInfo) => {
+      await throttleNavigation();
       const response = await page.goto(url);
       await expect(response.ok()).toBeTruthy();
       const results = await makeAxeBuilder().analyze();
@@ -58,6 +73,7 @@ for (const url of sitemapUrls) {
     `Sitemap page should not have console errors: ${urlToPath(url)}`,
     { annotation: { type: 'url', description: url } },
     async ({ page }, testInfo) => {
+      await throttleNavigation();
       const logs = [];
       page.on('console', (message) => {
         if (message.type() === 'error') {
