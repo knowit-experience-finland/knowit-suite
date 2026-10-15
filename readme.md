@@ -1,6 +1,6 @@
 # Knowit Suite
 
-Knowit Suite – fast Playwright tests for website quality. Configure the base URL in `.env` and the paths you care about in `project.config.js`.
+Knowit Suite – fast Playwright tests for website quality. Configure the base URL in `.env` and the paths you care about in `knowit-suite.config.js`.
 
 All tests are written with [Playwright](https://playwright.dev/).
 
@@ -32,7 +32,7 @@ The suite is meant to be copied into projects as is. Everything under `knowit-su
 
 ```
 playwright.config.js   identical: re-exports knowit-suite/playwright.config.js
-project.config.js      project settings: URLs, spinners, axe excludes, menu toggle…
+knowit-suite.config.js project settings: URLs, spinners, axe excludes, menu toggle…
 knowit-suite/          identical: shared config, helpers and tests
 tests/                 project's own tests
 helpers/               project's own helpers
@@ -51,10 +51,10 @@ Projects need `"type": "module"` in `package.json`.
 
 ### Project settings
 
-All settings in `project.config.js` are optional; see `ProjectConfig` in `knowit-suite/config.js`.
+All settings in `knowit-suite.config.js` are optional; see `SuiteConfig` in `knowit-suite/config.js`.
 
 ```js
-/** @type {import('./knowit-suite/config.js').ProjectConfig} */
+/** @type {import('./knowit-suite/config.js').SuiteConfig} */
 export default {
   urls: { '': ['/', '/contact/'], test: [], production: [] },
   mobileUrls: { '': ['/'] },
@@ -121,7 +121,7 @@ npx playwright test --update-snapshots
 
 ## URLs
 
-URLs to test are managed in `project.config.js`. Paths starting with `/` are prefixed with `BASE_URL`, full URLs are used as is.
+URLs to test are managed in `knowit-suite.config.js`. Paths starting with `/` are prefixed with `BASE_URL`, full URLs are used as is.
 
 A page that needs unlocking first, e.g. a password-protected test page, is given as an object with an `unlock` step. It runs after the page has loaded, in every shared test and before Lighthouse, and returns the unlocked page's response:
 
@@ -181,7 +181,7 @@ BASE_URL="https://knowit.fi" URL_CATEGORY="production" npx playwright test
 
 ## Adding new tests
 
-To test new URLs with the shared specs, update `project.config.js`. Custom scenarios live in `tests/`; create a new `.spec.js` there when you need something bespoke.
+To test new URLs with the shared specs, update `knowit-suite.config.js`. Custom scenarios live in `tests/`; create a new `.spec.js` there when you need something bespoke.
 
 See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for more information on writing tests.
 

@@ -1,5 +1,5 @@
 // Optional helpers for WordPress sites. The suite itself doesn't depend on
-// WordPress; import these in project.config.js when the site runs on it.
+// WordPress; import these in knowit-suite.config.js when the site runs on it.
 
 /**
  * Unlock step for a page protected with a WordPress post password. Use as

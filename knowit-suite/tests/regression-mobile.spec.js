@@ -4,7 +4,7 @@ import { waitForPageToSettle } from '../helpers/helperWaitForPageToSettle.js';
 import { openUrl } from '../helpers/helperOpenUrl.js';
 
 // Runs in the "mobile" Playwright project. Opens the menu when
-// `menuToggleSelector` is set in project.config.js.
+// `menuToggleSelector` is set in knowit-suite.config.js.
 getMobileUrls().forEach((url) => {
   test(
     `Should match visually saved mobile state: ${urlToPath(url)}`,

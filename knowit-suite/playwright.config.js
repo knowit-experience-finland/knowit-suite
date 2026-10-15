@@ -14,7 +14,7 @@ const LIGHTHOUSE_SPEC = /knowit-suite\/tests\/lighthouse\.spec\.js$/;
 /**
  * Shared config, re-exported by the project's own `playwright.config.js`.
  * Relative paths resolve from the project root. Override anything with
- * `playwright` in `project.config.js`.
+ * `playwright` in `knowit-suite.config.js`.
  *
  * @see https://playwright.dev/docs/test-configuration
  */

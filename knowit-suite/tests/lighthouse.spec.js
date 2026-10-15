@@ -11,7 +11,7 @@ import { openUrl } from '../helpers/helperOpenUrl.js';
 
 // Runs in the "lighthouse" Playwright project, mobile (Lighthouse default).
 // Scores are the median of RUNS audits; thresholds come from
-// `lighthouseThresholds` in project.config.js and never change by themselves.
+// `lighthouseThresholds` in knowit-suite.config.js and never change by themselves.
 const RUNS = 3;
 
 // Normal run-to-run variance per category, kept as margin in suggestions

@@ -1,7 +1,7 @@
 import { config } from '../config.js';
 
 // Helper function to wait for the page to fully load. Spinners to wait for
-// are listed in `spinnerSelectors` in project.config.js.
+// are listed in `spinnerSelectors` in knowit-suite.config.js.
 export const waitForPageToSettle = async (page) => {
   // Wait for the basic "load" state
   await page.waitForLoadState('load', { timeout: 15000 });

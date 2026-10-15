@@ -1,7 +1,7 @@
 /**
  * Project settings for the shared tests in knowit-suite/. Everything is optional.
  *
- * @type {import('./knowit-suite/config.js').ProjectConfig}
+ * @type {import('./knowit-suite/config.js').SuiteConfig}
  */
 export default {
   // Paths are prefixed with BASE_URL, full URLs are used as is.

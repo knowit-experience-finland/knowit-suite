@@ -1,4 +1,4 @@
-import projectConfig from '../project.config.js';
+import suiteConfig from '../knowit-suite.config.js';
 
 const BASE_URL = (process.env.BASE_URL ?? '').replace(/\/+$/, '');
 const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
@@ -18,7 +18,7 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  */
 
 /**
- * @typedef {object} ProjectConfig
+ * @typedef {object} SuiteConfig
  * @property {Record<string, UrlEntry[]>} [urls] URLs per URL_CATEGORY for the desktop tests.
  * @property {Record<string, UrlEntry[]>} [mobileUrls] URLs per URL_CATEGORY for the mobile screenshots.
  * @property {Record<string, UrlEntry[]>} [lighthouseUrls] URLs per URL_CATEGORY for the Lighthouse audit.
@@ -33,9 +33,9 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  */
 
 /**
- * Project settings from `project.config.js`, with defaults for anything left out.
+ * Settings from `knowit-suite.config.js`, with defaults for anything left out.
  *
- * @type {Required<ProjectConfig>}
+ * @type {Required<SuiteConfig>}
  */
 export const config = {
   urls: { '': ['/'] },
@@ -62,7 +62,7 @@ export const config = {
   maxDiffPixelRatio: 0.05,
   screenshotCss: [],
   playwright: {},
-  ...projectConfig,
+  ...suiteConfig,
 };
 
 // Unlock steps of protected pages, by full URL
