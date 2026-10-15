@@ -1,7 +1,13 @@
 import fs from 'node:fs';
 import lighthouse from 'lighthouse';
 import { chromium, expect, test } from '@playwright/test';
-import { config, getLighthouseUrls, urlToPath } from '../config.js';
+import {
+  config,
+  getLighthouseUrls,
+  getUnlockStep,
+  urlToPath,
+} from '../config.js';
+import { openUrl } from '../helpers/helperOpenUrl.js';
 
 // Runs in the "lighthouse" Playwright project, mobile (Lighthouse default).
 // Scores are the median of RUNS audits; thresholds come from
@@ -25,6 +31,12 @@ const audit = async (url, port) => {
     if (typeof storageState === 'string') {
       const { cookies } = JSON.parse(fs.readFileSync(storageState, 'utf8'));
       await context.addCookies(cookies);
+    }
+    if (getUnlockStep(url)) {
+      // Unlock once; cookies it sets stay in this context
+      const page = await context.newPage();
+      await openUrl(page, url);
+      await page.close();
     }
 
     const { lhr, report } = await lighthouse(url, {

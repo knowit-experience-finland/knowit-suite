@@ -1,10 +1,11 @@
 import { getUrls, urlToPath } from '../config.js';
 import { test, expect } from '../helpers/fixtures.js';
 import { createHtmlReport } from 'axe-html-reporter';
+import { openUrl } from '../helpers/helperOpenUrl.js';
 
 getUrls().forEach((url) => {
   test(
-    `Should not have WCAG A, AA violations: ${urlToPath(url)}`,
+    `Should not have WCAG A, AA or best-practice violations: ${urlToPath(url)}`,
     {
       annotation: {
         type: 'url',
@@ -12,7 +13,7 @@ getUrls().forEach((url) => {
       },
     },
     async ({ page, makeAxeBuilder }, testInfo) => {
-      const response = await page.goto(url);
+      const response = await openUrl(page, url);
       await expect(response.ok()).toBeTruthy();
 
       const accessibilityScanResults = await makeAxeBuilder().analyze();

@@ -1,5 +1,6 @@
 import { getUrls, urlToPath } from '../config.js';
 import { expect, test } from '../helpers/fixtures.js';
+import { openUrl } from '../helpers/helperOpenUrl.js';
 
 getUrls().forEach((url) => {
   test(
@@ -29,7 +30,7 @@ getUrls().forEach((url) => {
         logs.push({ message: error.message, type: error.name, location: '' });
       });
 
-      const response = await page.goto(url);
+      const response = await openUrl(page, url);
       await page.waitForLoadState('load', { timeout: 10_000 }); // Wait max 10s for `load` event.
       await expect(response.ok()).toBeTruthy();
 

@@ -39,6 +39,8 @@ export default defineConfig({
   use: {
     /* Ignore SSL errors */
     ignoreHTTPSErrors: true,
+    /* Prefer reduced motion: fewer animations, more stable screenshots */
+    reducedMotion: 'reduce',
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.BASE_URL,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */

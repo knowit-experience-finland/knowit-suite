@@ -1,6 +1,7 @@
 import { config, getUrls, urlToPath } from '../config.js';
 import { expect, test } from '../helpers/fixtures.js';
 import { waitForPageToSettle } from '../helpers/helperWaitForPageToSettle.js';
+import { openUrl } from '../helpers/helperOpenUrl.js';
 
 getUrls().forEach((url) => {
   test(
@@ -13,7 +14,7 @@ getUrls().forEach((url) => {
     },
     async ({ page }) => {
       test.slow();
-      const response = await page.goto(url);
+      const response = await openUrl(page, url);
       await waitForPageToSettle(page);
 
       expect(response.ok()).toBeTruthy();

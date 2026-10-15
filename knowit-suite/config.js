@@ -4,10 +4,24 @@ const BASE_URL = (process.env.BASE_URL ?? '').replace(/\/+$/, '');
 const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
 
 /**
+ * Opens a protected page, e.g. fills in a password form, after the page has
+ * loaded. Returns the unlocked page's response, or nothing if it was already
+ * unlocked. See helpers/wordpress.js for ready-made ones.
+ *
+ * @typedef {(args: { page: import('@playwright/test').Page, url: string }) => Promise<import('@playwright/test').Response | null | void>} UnlockStep
+ */
+
+/**
+ * A path or full URL, or an object for a page that needs unlocking.
+ *
+ * @typedef {string | { path: string, unlock?: UnlockStep }} UrlEntry
+ */
+
+/**
  * @typedef {object} ProjectConfig
- * @property {Record<string, string[]>} [urls] URLs per URL_CATEGORY for the desktop tests.
- * @property {Record<string, string[]>} [mobileUrls] URLs per URL_CATEGORY for the mobile screenshots.
- * @property {Record<string, string[]>} [lighthouseUrls] URLs per URL_CATEGORY for the Lighthouse audit.
+ * @property {Record<string, UrlEntry[]>} [urls] URLs per URL_CATEGORY for the desktop tests.
+ * @property {Record<string, UrlEntry[]>} [mobileUrls] URLs per URL_CATEGORY for the mobile screenshots.
+ * @property {Record<string, UrlEntry[]>} [lighthouseUrls] URLs per URL_CATEGORY for the Lighthouse audit.
  * @property {Record<string, number>} [lighthouseThresholds] Minimum Lighthouse scores per category, 0–100.
  * @property {string} [menuToggleSelector] Mobile menu toggle; the menu is opened for a second screenshot.
  * @property {string[]} [spinnerSelectors] Loaders to wait for before screenshots.
@@ -41,23 +55,46 @@ export const config = {
   ...projectConfig,
 };
 
+// Unlock steps of protected pages, by full URL
+const unlockSteps = new Map();
+
 /**
  * URLs in the always-tested '' category plus the URL_CATEGORY one ('test' if
  * the category is missing). Paths starting with "/" are prefixed with BASE_URL.
  *
- * @param {Record<string, string[]>} urls
+ * @param {Record<string, UrlEntry[]>} urls
  * @returns {string[]}
  */
 const resolveUrls = (urls) =>
   [...(urls[''] ?? []), ...(urls[URL_CATEGORY] ?? urls.test ?? [])].map(
-    (url) => (url.startsWith('/') ? `${BASE_URL}${url}` : url)
+    (entry) => {
+      const { path, unlock } =
+        typeof entry === 'string' ? { path: entry } : entry;
+      const url = path.startsWith('/') ? `${BASE_URL}${path}` : path;
+      if (unlock) {
+        unlockSteps.set(url, unlock);
+      }
+      return url;
+    }
   );
 
-export const getUrls = () => resolveUrls(config.urls);
+const urls = resolveUrls(config.urls);
+const mobileUrls = resolveUrls(config.mobileUrls);
+const lighthouseUrls = resolveUrls(config.lighthouseUrls);
 
-export const getMobileUrls = () => resolveUrls(config.mobileUrls);
+export const getUrls = () => urls;
 
-export const getLighthouseUrls = () => resolveUrls(config.lighthouseUrls);
+export const getMobileUrls = () => mobileUrls;
+
+export const getLighthouseUrls = () => lighthouseUrls;
+
+/**
+ * Unlock step of a protected page, if it has one.
+ *
+ * @param {string} url
+ * @returns {UnlockStep | undefined}
+ */
+export const getUnlockStep = (url) => unlockSteps.get(url);
 
 /**
  * Strip BASE_URL from url.

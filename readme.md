@@ -19,7 +19,7 @@ All tests are written with [Playwright](https://playwright.dev/).
 
 Currently, the suite includes the following tests.
 
-- Accessibility `accessibility.spec.js` with [AXE](https://npmjs.org/@axe-core/playwright).
+- Accessibility `accessibility.spec.js` with [AXE](https://npmjs.org/@axe-core/playwright): WCAG A and AA, plus axe's best-practice rules.
 - Regression `regression.spec.js` compares screenshots using Playwright's [Visual Comparison](https://playwright.dev/docs/test-snapshots).
 - Mobile regression `regression-mobile.spec.js` takes mobile screenshots (320px wide), also with the menu open when `menuToggleSelector` is set, and fails if the page scrolls sideways (WCAG 1.4.10 Reflow).
 - Errors `errors.spec.js` checks for JavaScript console errors and uncaught exceptions.
@@ -105,6 +105,41 @@ npx playwright test --update-snapshots
 
 URLs to test are managed in `project.config.js`. Paths starting with `/` are prefixed with `BASE_URL`, full URLs are used as is.
 
+A page that needs unlocking first, e.g. a password-protected test page, is given as an object with an `unlock` step. It runs after the page has loaded, in every shared test and before Lighthouse, and returns the unlocked page's response:
+
+```js
+const allBlocks = {
+  path: '/all-blocks/',
+  // E.g. a site that unlocks previews with a cookie
+  unlock: async ({ page, url }) => {
+    await page
+      .context()
+      .addCookies([{ name: 'preview', value: process.env.PREVIEW_TOKEN, url }]);
+    return page.goto(url);
+  },
+};
+
+export default {
+  urls: { '': ['/', allBlocks] },
+  mobileUrls: { '': [allBlocks] },
+};
+```
+
+Keep passwords in `.env`, not in the config. A test page with every block is a good candidate: one URL covers all of them.
+
+#### WordPress
+
+`knowit-suite/helpers/wordpress.js` has ready-made helpers for WordPress sites. For a page protected with a post password:
+
+```js
+import { wpPostPassword } from './knowit-suite/helpers/wordpress.js';
+
+const allBlocks = {
+  path: '/all-blocks/',
+  unlock: wpPostPassword(process.env.ALL_BLOCKS_PASSWORD),
+};
+```
+
 The base URL for tests can be changed with `BASE_URL` environment variable, allowing us to test the same paths in multiple environments.
 
 The URL category for tests can be defined with `URL_CATEGORY` environment variable. This affects which URLs are tested in test.
@@ -137,5 +172,6 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 ### 1.1.0 – 2026-10-15
 
 - Shared tests moved to a `knowit-suite/` folder that is copied into projects as is; project settings live in `project.config.js`, snapshots in `snapshots/`. Requires `"type": "module"`.
-- New: mobile screenshots with menu open, reflow check, Lighthouse thresholds.
+- New: mobile screenshots with menu open, reflow check, Lighthouse thresholds, unlocking protected pages, axe best-practice rules.
+- Tests run with reduced motion, so regenerate screenshot baselines.
 - Fixed: uncaught page errors are now caught.

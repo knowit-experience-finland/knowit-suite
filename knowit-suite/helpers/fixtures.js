@@ -22,6 +22,7 @@ export const test = baseTest.extend({
         'wcag21aa',
         'wcag22a',
         'wcag22aa',
+        'best-practice',
       ]);
       config.axeExclude.forEach((selector) => builder.exclude(selector));
       return builder;
