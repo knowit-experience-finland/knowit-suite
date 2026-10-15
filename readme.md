@@ -82,9 +82,18 @@ export default {
   axeTags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
   maxDiffPixelRatio: 0.05,
   screenshotCss: ['./helpers/screenshot.css'],
+  consent: 'deny',
+  blockAnalytics: ['stats.example.com'],
   playwright: { globalSetup: './helpers/global-setup.js' },
 };
 ```
+
+Tests don't count as visitors in analytics by default:
+
+- `consent`: the Cookiebot stub denies consent (`'deny'`, default) or gives it (`'grant'`), e.g. for testing tracking scripts.
+- `blockAnalytics`: requests to common analytics services (Google Tag Manager, Google Analytics, Matomo Cloud, Hotjar, Microsoft Clarity) get an empty response, as do standard analytics paths on any domain (`/gtm.js`, `/gtag/js`, `/g/collect`, `matomo.js`/`.php`), which covers server-side Tag Manager and self-hosted Matomo. Give a list to block extra domains too, or `false` to allow them.
+
+Neither stops analytics sent from the server. Screenshots can differ from runs with consent given, e.g. placeholders instead of embeds.
 
 `axeTags` replaces the whole default list, so a project that sets it doesn't get later changes to the default.
 

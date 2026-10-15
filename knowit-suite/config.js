@@ -41,6 +41,8 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  * @property {string[]} [axeTags] Axe rule groups to check. Replaces the default list.
  * @property {number} [maxDiffPixelRatio] Allowed screenshot difference, 0–1.
  * @property {string[]} [screenshotCss] Extra stylesheets applied for screenshots.
+ * @property {'deny' | 'grant'} [consent] Cookie consent given by the Cookiebot stub. Denied by default.
+ * @property {boolean | string[]} [blockAnalytics] Block analytics services (default), false to allow, or extra domains to block.
  * @property {Hooks} [hooks] Project-specific steps in the shared tests.
  * @property {string[]} [disable] Shared tests to turn off: 'regression', 'regression-mobile', 'accessibility', 'errors', 'lighthouse'.
  * @property {Record<string, any>} [fixtures] Playwright fixtures that replace the suite's ones with the same name.
@@ -76,12 +78,20 @@ export const config = {
   ],
   maxDiffPixelRatio: 0.05,
   screenshotCss: [],
+  consent: 'deny',
+  blockAnalytics: true,
   hooks: {},
   disable: [],
   fixtures: {},
   playwright: {},
   ...suiteConfig,
 };
+
+if (!['deny', 'grant'].includes(config.consent)) {
+  throw new Error(
+    `consent must be 'deny' or 'grant', not "${config.consent}".`
+  );
+}
 
 // Unlock steps of protected pages, by full URL
 const unlockSteps = new Map();
