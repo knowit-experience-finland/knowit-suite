@@ -25,12 +25,6 @@
     "about:setup": "echo \"Once after cloning this repo: browsers and Git hooks\"",
     "setup": "npx playwright install && husky"
   },
-  "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "prettier --write"
-    ]
-  },
   "peerDependencies": {
     "@axe-core/playwright": "^4.10.1",
     "@playwright/test": "^1.49.1",
@@ -49,7 +43,6 @@
     "globals": "^15.14.0",
     "husky": "^9.1.7",
     "lighthouse": "^12.8.2",
-    "lint-staged": "^15.4.1",
     "prettier": "^3.4.2"
   }
 }
