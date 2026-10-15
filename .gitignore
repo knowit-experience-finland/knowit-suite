@@ -1,7 +1,10 @@
+claude.md
+agents.md
+CLAUDE.local.md
 .env
 node_modules/
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
-regression.spec.js-snapshots
+/snapshots/

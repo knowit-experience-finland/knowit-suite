@@ -1,26 +1,21 @@
-import { getUrls, urlToPath } from '../urls.js';
-import { test, expect } from '../helpers/fixture-axe-test.js';
+import { config, getUrls, urlToPath, runHook } from '../config.js';
+import { test, expect } from '../helpers/fixtures.js';
 import { createHtmlReport } from 'axe-html-reporter';
-import { stubCookiebot } from '../helpers/helperCookiebotBlock.js';
-import { blockImages } from '../helpers/blockImages.js';
-
-test.beforeEach(async ({ context }) => {
-  await stubCookiebot(context);
-  await blockImages(context);
-});
+import { openUrl } from '../helpers/helperOpenUrl.js';
 
 getUrls().forEach((url) => {
   test(
-    `Should not have WCAG A, AA violations: ${urlToPath(url)}`,
+    `Should not have accessibility violations: ${urlToPath(url)}`,
     {
-      annotation: {
-        type: 'url',
-        description: `${url}`,
-      },
+      annotation: [
+        { type: 'url', description: `${url}` },
+        { type: 'axe tags', description: config.axeTags.join(', ') },
+      ],
     },
     async ({ page, makeAxeBuilder }, testInfo) => {
-      const response = await page.goto(url);
+      const response = await openUrl(page, url);
       await expect(response.ok()).toBeTruthy();
+      await runHook('afterLoad', { page, url });
 
       const accessibilityScanResults = await makeAxeBuilder().analyze();
 

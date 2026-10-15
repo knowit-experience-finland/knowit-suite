@@ -6,12 +6,17 @@ export const COOKIEBOT_RE =
 
 /**
  * Stub Cookiebot resources to avoid net::ERR_FAILED and keep pages happy.
- * Call once per BrowserContext (e.g., in test.beforeEach).
+ * Call once per BrowserContext (e.g., in test.beforeEach). Consent is denied
+ * by default, so tests don't count as consenting visitors in analytics.
+ *
+ * @param {import('@playwright/test').BrowserContext} context
+ * @param {{ consent?: 'deny' | 'grant' }} [options]
  */
-export const stubCookiebot = async (context) => {
+export const stubCookiebot = async (context, { consent = 'deny' } = {}) => {
   if (!context) {
     return;
   }
+  const granted = consent === 'grant';
 
   await context.route(COOKIEBOT_RE, async (route) => {
     const req = route.request();
@@ -30,7 +35,10 @@ export const stubCookiebot = async (context) => {
               var cb = (window.Cookiebot = window.Cookiebot || {});
               cb.submitCustomConsent = cb.submitCustomConsent || function(){};
               cb.renew = cb.renew || function(){};
-              cb.consent = cb.consent || { necessary: true, preferences: true, statistics: true, marketing: true };
+              cb.consent = { necessary: true, preferences: ${granted}, statistics: ${granted}, marketing: ${granted} };
+              cb.consented = ${granted};
+              cb.declined = ${!granted};
+              cb.hasResponse = true;
 
               // Some sites check events/dataLayer
               if (Array.isArray(window.dataLayer)) {
