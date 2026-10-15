@@ -1,4 +1,4 @@
-import { config, getMobileUrls, urlToPath } from '../config.js';
+import { config, getMobileUrls, urlToPath, runHook } from '../config.js';
 import { expect, test } from '../helpers/fixtures.js';
 import { waitForPageToSettle } from '../helpers/helperWaitForPageToSettle.js';
 import { openUrl } from '../helpers/helperOpenUrl.js';
@@ -18,6 +18,7 @@ getMobileUrls().forEach((url) => {
       test.slow();
       const response = await openUrl(page, url);
       await waitForPageToSettle(page);
+      await runHook('afterLoad', { page, url });
 
       expect(response.ok()).toBeTruthy();
 
@@ -59,6 +60,7 @@ getMobileUrls().forEach((url) => {
         mask: [page.locator('img')],
       };
 
+      await runHook('beforeScreenshot', { page, url });
       await expect(page).toHaveScreenshot(screenshotOptions);
 
       if (config.menuToggleSelector) {
@@ -69,6 +71,7 @@ getMobileUrls().forEach((url) => {
           .click();
         // The open menu covers the viewport, the rest of the page is noise.
         // Masks are drawn on top of the menu too, so leave them out.
+        await runHook('beforeScreenshot', { page, url });
         await expect(page).toHaveScreenshot({
           ...screenshotOptions,
           fullPage: false,

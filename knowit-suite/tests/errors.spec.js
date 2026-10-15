@@ -1,4 +1,4 @@
-import { getUrls, urlToPath } from '../config.js';
+import { getUrls, urlToPath, runHook } from '../config.js';
 import { expect, test } from '../helpers/fixtures.js';
 import { openUrl } from '../helpers/helperOpenUrl.js';
 
@@ -33,6 +33,7 @@ getUrls().forEach((url) => {
       const response = await openUrl(page, url);
       await page.waitForLoadState('load', { timeout: 10_000 }); // Wait max 10s for `load` event.
       await expect(response.ok()).toBeTruthy();
+      await runHook('afterLoad', { page, url });
 
       if (logs.length > 0) {
         await testInfo.attach('console logs', {

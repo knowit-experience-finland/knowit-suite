@@ -18,6 +18,18 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  */
 
 /**
+ * A project-specific step in the shared tests.
+ *
+ * @typedef {(args: { page: import('@playwright/test').Page, url: string }) => Promise<void> | void} Hook
+ */
+
+/**
+ * @typedef {object} Hooks
+ * @property {Hook} [afterLoad] After the page has loaded (and settled), in every shared page test.
+ * @property {Hook} [beforeScreenshot] Right before each screenshot.
+ */
+
+/**
  * @typedef {object} SuiteConfig
  * @property {Record<string, UrlEntry[]>} [urls] URLs per URL_CATEGORY for the desktop tests.
  * @property {Record<string, UrlEntry[]>} [mobileUrls] URLs per URL_CATEGORY for the mobile screenshots.
@@ -29,6 +41,9 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  * @property {string[]} [axeTags] Axe rule groups to check. Replaces the default list.
  * @property {number} [maxDiffPixelRatio] Allowed screenshot difference, 0–1.
  * @property {string[]} [screenshotCss] Extra stylesheets applied for screenshots.
+ * @property {Hooks} [hooks] Project-specific steps in the shared tests.
+ * @property {string[]} [disable] Shared tests to turn off: 'regression', 'regression-mobile', 'accessibility', 'errors', 'lighthouse'.
+ * @property {Record<string, any>} [fixtures] Playwright fixtures that replace the suite's ones with the same name.
  * @property {import('@playwright/test').PlaywrightTestConfig} [playwright] Overrides for the Playwright config.
  */
 
@@ -61,6 +76,9 @@ export const config = {
   ],
   maxDiffPixelRatio: 0.05,
   screenshotCss: [],
+  hooks: {},
+  disable: [],
+  fixtures: {},
   playwright: {},
   ...suiteConfig,
 };
@@ -113,3 +131,13 @@ export const getUnlockStep = (url) => unlockSteps.get(url);
  * @returns {string}
  */
 export const urlToPath = (url) => url.replace(BASE_URL, '');
+
+/**
+ * Run a project hook from `hooks` in knowit-suite.config.js, if it has one.
+ *
+ * @param {keyof Hooks} name
+ * @param {{ page: import('@playwright/test').Page, url: string }} args
+ */
+export const runHook = async (name, args) => {
+  await config.hooks[name]?.(args);
+};

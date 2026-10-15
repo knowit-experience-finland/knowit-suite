@@ -8,8 +8,27 @@ if (!process.env.BASE_URL) {
 }
 
 const { playwright } = config;
-const MOBILE_SPEC = /regression-mobile\.spec\.js$/;
-const LIGHTHOUSE_SPEC = /knowit-suite\/tests\/lighthouse\.spec\.js$/;
+const SHARED_SPECS = [
+  'regression',
+  'regression-mobile',
+  'accessibility',
+  'errors',
+  'lighthouse',
+];
+const sharedSpec = (name) =>
+  new RegExp(`knowit-suite[\\\\/]tests[\\\\/]${name}\\.spec\\.js$`);
+const MOBILE_SPEC = sharedSpec('regression-mobile');
+const LIGHTHOUSE_SPEC = sharedSpec('lighthouse');
+
+// Shared tests turned off with `disable` in knowit-suite.config.js
+const DISABLED_SPECS = config.disable.map((name) => {
+  if (!SHARED_SPECS.includes(name)) {
+    throw new Error(
+      `Unknown test "${name}" in disable. Use: ${SHARED_SPECS.join(', ')}.`
+    );
+  }
+  return sharedSpec(name);
+});
 
 /**
  * Shared config, re-exported by the project's own `playwright.config.js`.
@@ -51,18 +70,20 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [MOBILE_SPEC, LIGHTHOUSE_SPEC],
+      testIgnore: [MOBILE_SPEC, LIGHTHOUSE_SPEC, ...DISABLED_SPECS],
     },
     {
       name: 'mobile',
       /* 320px is the WCAG 1.4.10 reflow width */
       use: { ...devices['Pixel 7'], viewport: { width: 320, height: 640 } },
       testMatch: MOBILE_SPEC,
+      testIgnore: DISABLED_SPECS,
     },
     {
       /* Lighthouse launches its own browser, mobile by default */
       name: 'lighthouse',
       testMatch: LIGHTHOUSE_SPEC,
+      testIgnore: DISABLED_SPECS,
     },
   ],
   expect: {

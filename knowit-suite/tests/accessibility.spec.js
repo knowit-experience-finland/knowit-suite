@@ -1,4 +1,4 @@
-import { config, getUrls, urlToPath } from '../config.js';
+import { config, getUrls, urlToPath, runHook } from '../config.js';
 import { test, expect } from '../helpers/fixtures.js';
 import { createHtmlReport } from 'axe-html-reporter';
 import { openUrl } from '../helpers/helperOpenUrl.js';
@@ -15,6 +15,7 @@ getUrls().forEach((url) => {
     async ({ page, makeAxeBuilder }, testInfo) => {
       const response = await openUrl(page, url);
       await expect(response.ok()).toBeTruthy();
+      await runHook('afterLoad', { page, url });
 
       const accessibilityScanResults = await makeAxeBuilder().analyze();
 

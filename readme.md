@@ -90,6 +90,41 @@ export default {
 
 `playwright` overrides the shared Playwright config (`use` and `expect.toHaveScreenshot` are merged, the rest replaced).
 
+#### Extending without editing the suite
+
+From lightest to heaviest; the lighter the mechanism, the longer a project keeps getting suite updates.
+
+**Hooks** run project-specific steps inside the shared tests:
+
+```js
+hooks: {
+  // After the page has loaded (and settled), in every shared page test
+  afterLoad: async ({ page, url }) => {},
+  // Right before each screenshot, e.g. close a popup
+  beforeScreenshot: async ({ page }) => {
+    await page.locator('.newsletter-popup .close').click();
+  },
+},
+```
+
+**Turning shared tests off**: `regression`, `regression-mobile`, `accessibility`, `errors` or `lighthouse`. An unknown name fails at start.
+
+```js
+disable: ['lighthouse'],
+```
+
+**Fixture overrides** replace the suite's [Playwright fixtures](https://playwright.dev/docs/test-fixtures) of the same name in every shared test, e.g. a different axe setup. Everything else in the suite's fixtures stays up to date:
+
+```js
+import AxeBuilder from '@axe-core/playwright';
+
+fixtures: {
+  makeAxeBuilder: async ({ page }, use) => {
+    await use(() => new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']));
+  },
+},
+```
+
 Project tests can use the suite's base test, which stubs Cookiebot and blocks images:
 
 ```js
