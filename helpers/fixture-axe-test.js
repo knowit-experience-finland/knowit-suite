@@ -17,6 +17,7 @@ export const test = baseTest.extend({
           'wcag21aa',
           'wcag22a',
           'wcag22aa',
+          'best-practice',
         ])
         // .disableRules('color-contrast') // Disable contrast checks
         .exclude('#CookieBanner');
