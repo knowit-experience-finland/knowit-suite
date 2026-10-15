@@ -26,6 +26,7 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  * @property {string} [menuToggleSelector] Mobile menu toggle; the menu is opened for a second screenshot.
  * @property {string[]} [spinnerSelectors] Loaders to wait for before screenshots.
  * @property {string[]} [axeExclude] Selectors left out of the accessibility scan.
+ * @property {string[]} [axeTags] Axe rule groups to check. Replaces the default list.
  * @property {number} [maxDiffPixelRatio] Allowed screenshot difference, 0–1.
  * @property {string[]} [screenshotCss] Extra stylesheets applied for screenshots.
  * @property {import('@playwright/test').PlaywrightTestConfig} [playwright] Overrides for the Playwright config.
@@ -49,6 +50,15 @@ export const config = {
   menuToggleSelector: '',
   spinnerSelectors: [],
   axeExclude: [],
+  axeTags: [
+    'wcag2a',
+    'wcag2aa',
+    'wcag21a',
+    'wcag21aa',
+    'wcag22a',
+    'wcag22aa',
+    'best-practice',
+  ],
   maxDiffPixelRatio: 0.05,
   screenshotCss: [],
   playwright: {},

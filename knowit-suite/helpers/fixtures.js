@@ -15,15 +15,7 @@ export const test = baseTest.extend({
   },
   makeAxeBuilder: async ({ page }, use) => {
     const makeAxeBuilder = () => {
-      const builder = new AxeBuilder({ page }).withTags([
-        'wcag2a',
-        'wcag2aa',
-        'wcag21a',
-        'wcag21aa',
-        'wcag22a',
-        'wcag22aa',
-        'best-practice',
-      ]);
+      const builder = new AxeBuilder({ page }).withTags(config.axeTags);
       config.axeExclude.forEach((selector) => builder.exclude(selector));
       return builder;
     };

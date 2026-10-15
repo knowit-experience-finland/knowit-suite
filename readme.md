@@ -20,7 +20,7 @@ All tests are written with [Playwright](https://playwright.dev/).
 
 Currently, the suite includes the following tests.
 
-- Accessibility `accessibility.spec.js` with [AXE](https://npmjs.org/@axe-core/playwright): WCAG A and AA, plus axe's best-practice rules.
+- Accessibility `accessibility.spec.js` with [AXE](https://npmjs.org/@axe-core/playwright): WCAG A and AA plus axe's best-practice rules by default; `axeTags` changes the list.
 - Regression `regression.spec.js` compares screenshots using Playwright's [Visual Comparison](https://playwright.dev/docs/test-snapshots).
 - Mobile regression `regression-mobile.spec.js` takes mobile screenshots (320px wide), also with the menu open when `menuToggleSelector` is set, and fails if the page scrolls sideways (WCAG 1.4.10 Reflow).
 - Errors `errors.spec.js` checks for JavaScript console errors and uncaught exceptions.
@@ -68,11 +68,14 @@ export default {
   menuToggleSelector: '.menu-toggle',
   spinnerSelectors: ['.loading-spinner'],
   axeExclude: ['iframe'],
+  axeTags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
   maxDiffPixelRatio: 0.05,
   screenshotCss: ['./helpers/screenshot.css'],
   playwright: { globalSetup: './helpers/global-setup.js' },
 };
 ```
+
+`axeTags` replaces the whole default list, so a project that sets it doesn't get later changes to the default.
 
 `playwright` overrides the shared Playwright config (`use` and `expect.toHaveScreenshot` are merged, the rest replaced).
 
@@ -187,6 +190,6 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 ### 1.1.0 – 2026-10-15
 
 - Shared tests moved to a `knowit-suite/` folder that is copied into projects as is; project settings live in `project.config.js`, snapshots in `snapshots/`. Requires `"type": "module"`.
-- New: mobile screenshots with menu open, reflow check, Lighthouse thresholds, unlocking protected pages, axe best-practice rules.
+- New: mobile screenshots with menu open, reflow check, Lighthouse thresholds, unlocking protected pages, axe best-practice rules (rule groups set with `axeTags`).
 - Tests run with reduced motion, so regenerate screenshot baselines.
 - Fixed: uncaught page errors are now caught.

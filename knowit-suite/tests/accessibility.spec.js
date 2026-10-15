@@ -1,16 +1,16 @@
-import { getUrls, urlToPath } from '../config.js';
+import { config, getUrls, urlToPath } from '../config.js';
 import { test, expect } from '../helpers/fixtures.js';
 import { createHtmlReport } from 'axe-html-reporter';
 import { openUrl } from '../helpers/helperOpenUrl.js';
 
 getUrls().forEach((url) => {
   test(
-    `Should not have WCAG A, AA or best-practice violations: ${urlToPath(url)}`,
+    `Should not have accessibility violations: ${urlToPath(url)}`,
     {
-      annotation: {
-        type: 'url',
-        description: `${url}`,
-      },
+      annotation: [
+        { type: 'url', description: `${url}` },
+        { type: 'axe tags', description: config.axeTags.join(', ') },
+      ],
     },
     async ({ page, makeAxeBuilder }, testInfo) => {
       const response = await openUrl(page, url);
