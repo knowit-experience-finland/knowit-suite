@@ -8,6 +8,7 @@ All tests are written with [Playwright](https://playwright.dev/).
 
 - [Tests](#tests)
 - [Structure](#structure)
+  - [Adding the suite to a project](#adding-the-suite-to-a-project)
   - [Project settings](#project-settings)
 - [Requirements](#requirements)
 - [Running](#running)
@@ -28,26 +29,36 @@ Currently, the suite includes the following tests.
 
 ## Structure
 
-The suite is meant to be copied into projects as is. Everything under `knowit-suite/` is identical in every project; project-specific things live next to it.
+Projects install the suite from GitHub, and an npm script copies its `knowit-suite/` folder into the project. Everything under `knowit-suite/` comes from the suite; project-specific things live next to it.
 
 ```
-playwright.config.js   identical: re-exports knowit-suite/playwright.config.js
+playwright.config.js   re-exports knowit-suite/playwright.config.js
 knowit-suite.config.js project settings: URLs, spinners, axe excludes, menu toggle…
-knowit-suite/          identical: shared config, helpers and tests
+knowit-suite/          copied from the suite on npm install (gitignored)
 tests/                 project's own tests
 helpers/               project's own helpers
 snapshots/             screenshots (kept out of knowit-suite/)
 ```
 
-Never edit files in `knowit-suite/` inside a project. Make the change here and copy the folder over:
+### Adding the suite to a project
+
+In the project's test folder (needs `"type": "module"` in `package.json`):
 
 ```bash
-rsync -a --delete ../knowit-suite/knowit-suite/ ./knowit-suite/
+npm i -D github:knowit-experience-finland/knowit-suite#v2.0.0
 ```
 
-`diff -r ../knowit-suite/knowit-suite ./knowit-suite` shows whether a project is up to date.
+```json
+"scripts": {
+  "postinstall": "knowit-suite sync"
+}
+```
 
-Projects need `"type": "module"` in `package.json`.
+Add `knowit-suite/` to `.gitignore` and run `npm install`. The `postinstall` script replaces the `knowit-suite/` folder with the installed version on every plain `npm install`. Adding or updating the package with `npm install <package>` doesn't run it, so run `npm install` (or `npx knowit-suite sync`) afterwards.
+
+To update, change the tag in `package.json` and run `npm install`. During development a branch name works instead of a tag; `npm update knowit-suite` then pulls its newest commit.
+
+Never edit files in `knowit-suite/` inside a project: the next `npm install` replaces them. Change the suite instead, or use the settings below.
 
 ### Project settings
 
@@ -106,6 +117,8 @@ nvm use
 npm install
 npx playwright test
 ```
+
+In this repo, run `npm run setup` once after cloning: it installs the browsers and the Git hooks.
 
 If the UI has changed, update snapshots with:
 
