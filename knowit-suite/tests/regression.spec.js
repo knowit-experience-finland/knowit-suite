@@ -1,15 +1,6 @@
-import { getUrls, urlToPath } from '../urls.js';
-import { expect, test } from '@playwright/test';
-
+import { config, getUrls, urlToPath } from '../config.js';
+import { expect, test } from '../helpers/fixtures.js';
 import { waitForPageToSettle } from '../helpers/helperWaitForPageToSettle.js';
-import { stubCookiebot } from '../helpers/helperCookiebotBlock.js';
-import { blockImages } from '../helpers/blockImages.js';
-
-// in your test setup (beforeEach or a project-level fixture)
-test.beforeEach(async ({ context }) => {
-  await stubCookiebot(context);
-  await blockImages(context);
-});
 
 getUrls().forEach((url) => {
   test(
@@ -27,14 +18,12 @@ getUrls().forEach((url) => {
 
       expect(response.ok()).toBeTruthy();
 
-      let imageLocator = page.locator('img');
-
       await expect(page).toHaveScreenshot({
         fullPage: true,
-        maxDiffPixelRatio: 0.05, // 5%
+        maxDiffPixelRatio: config.maxDiffPixelRatio,
         timeout: 30000,
         animations: 'disabled',
-        mask: [imageLocator],
+        mask: [page.locator('img')],
       });
     }
   );

@@ -1,13 +1,6 @@
-import { getUrls, urlToPath } from '../urls.js';
-import { test, expect } from '../helpers/fixture-axe-test.js';
+import { getUrls, urlToPath } from '../config.js';
+import { test, expect } from '../helpers/fixtures.js';
 import { createHtmlReport } from 'axe-html-reporter';
-import { stubCookiebot } from '../helpers/helperCookiebotBlock.js';
-import { blockImages } from '../helpers/blockImages.js';
-
-test.beforeEach(async ({ context }) => {
-  await stubCookiebot(context);
-  await blockImages(context);
-});
 
 getUrls().forEach((url) => {
   test(
