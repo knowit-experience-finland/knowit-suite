@@ -7,7 +7,13 @@ export default {
   // Paths are prefixed with BASE_URL, full URLs are used as is.
   // The '' category is always tested, others by URL_CATEGORY (default 'test').
   urls: {
-    '': ['/', '/referenssit/', '/yhteystiedot/', '/tietoa-meista/'],
+    // prettier-ignore
+    '': [
+      '/',
+      '/referenssit/',
+      '/yhteystiedot/',
+      '/tietoa-meista/',
+    ],
     test: [],
     production: [],
   },
