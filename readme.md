@@ -9,6 +9,7 @@ All tests are written with [Playwright](https://playwright.dev/).
 - [Tests](#tests)
 - [Structure](#structure)
   - [Project settings](#project-settings)
+- [Requirements](#requirements)
 - [Running](#running)
   - [Tips](#tips)
 - [URLs](#urls)
@@ -80,6 +81,20 @@ Project tests can use the suite's base test, which stubs Cookiebot and blocks im
 ```js
 import { test, expect } from '../knowit-suite/helpers/fixtures.js';
 ```
+
+## Requirements
+
+The shared tests support projects still on Node 18, so dependency versions have upper limits until every project is on Node 22.19 or newer:
+
+| Package            | Node 18      | Node 20 | Node 22.19+  |
+| ------------------ | ------------ | ------- | ------------ |
+| `@playwright/test` | up to 1.61.x | latest  | latest       |
+| `lighthouse`       | 12.x         | 12.x    | 12.x or 13.x |
+
+- `@playwright/test` 1.62 and newer need Node 20. A Node 18 project must pin it, e.g. `"@playwright/test": "~1.61.0"`; otherwise `npm update` installs a version that no longer supports Node 18.
+- `lighthouse` 13 needs Node 22.19, so the suite stays on Lighthouse 12 while any project is on Node 18 or 20.
+- The suite's own code needs Node 18.16 or newer and ES modules (`"type": "module"`).
+- The suite repo's development tools (ESLint, Prettier, Husky) run only in this repo, so they can need a newer Node; see `.nvmrc`.
 
 ## Running
 
