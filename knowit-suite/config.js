@@ -76,7 +76,7 @@ export const config = {
     'wcag22aa',
     'best-practice',
   ],
-  maxDiffPixelRatio: 0.05,
+  maxDiffPixelRatio: 0.005,
   screenshotCss: [],
   consent: 'deny',
   blockAnalytics: true,

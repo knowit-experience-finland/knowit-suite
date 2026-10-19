@@ -80,7 +80,7 @@ export default {
   spinnerSelectors: ['.loading-spinner'],
   axeExclude: ['iframe'],
   axeTags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  maxDiffPixelRatio: 0.05,
+  maxDiffPixelRatio: 0.005,
   screenshotCss: ['./helpers/screenshot.css'],
   consent: 'deny',
   blockAnalytics: ['stats.example.com'],
