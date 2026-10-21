@@ -43,6 +43,7 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  * @property {string[]} [screenshotCss] Extra stylesheets applied for screenshots.
  * @property {'deny' | 'grant'} [consent] Cookie consent given by the Cookiebot stub. Denied by default.
  * @property {boolean | string[]} [blockAnalytics] Block analytics services (default), false to allow, or extra domains to block.
+ * @property {string[]} [allowedEmbeds] Domains whose iframes still load when consent is denied (other third-party iframes get an empty page).
  * @property {Hooks} [hooks] Project-specific steps in the shared tests.
  * @property {string[]} [disable] Shared tests to turn off: 'regression', 'regression-mobile', 'accessibility', 'errors', 'lighthouse'.
  * @property {Record<string, any>} [fixtures] Playwright fixtures that replace the suite's ones with the same name.
@@ -80,6 +81,7 @@ export const config = {
   screenshotCss: [],
   consent: 'deny',
   blockAnalytics: true,
+  allowedEmbeds: [],
   hooks: {},
   disable: [],
   fixtures: {},

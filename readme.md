@@ -84,13 +84,15 @@ export default {
   screenshotCss: ['./helpers/screenshot.css'],
   consent: 'deny',
   blockAnalytics: ['stats.example.com'],
+  allowedEmbeds: ['challenges.cloudflare.com'],
   playwright: { globalSetup: './helpers/global-setup.js' },
 };
 ```
 
 Tests don't count as visitors in analytics by default:
 
-- `consent`: the Cookiebot stub denies consent (`'deny'`, default) or gives it (`'grant'`), e.g. for testing tracking scripts.
+- `consent`: the Cookiebot stub denies consent (`'deny'`, default) or gives it (`'grant'`), e.g. for testing tracking scripts. With consent denied, third-party iframes (YouTube, maps, social media) get an empty page, as Cookiebot holds them back from real visitors without consent.
+- `allowedEmbeds`: domains whose iframes still load when consent is denied, for embeds that don't need consent (e.g. `challenges.cloudflare.com` for Turnstile).
 - `blockAnalytics`: requests to common analytics services (Google Tag Manager, Google Analytics, Matomo Cloud, Hotjar, Microsoft Clarity) get an empty response, as do standard analytics paths on any domain (`/gtm.js`, `/gtag/js`, `/g/collect`, `matomo.js`/`.php`), which covers server-side Tag Manager and self-hosted Matomo. Give a list to block extra domains too, or `false` to allow them.
 
 Neither stops analytics sent from the server. Screenshots can differ from runs with consent given, e.g. placeholders instead of embeds.
