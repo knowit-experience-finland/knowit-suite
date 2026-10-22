@@ -80,7 +80,7 @@ export default {
   spinnerSelectors: ['.loading-spinner'],
   axeExclude: ['iframe'],
   axeTags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  maxDiffPixelRatio: 0.005,
+  maxDiffPixels: 50,
   screenshotCss: ['./helpers/screenshot.css'],
   consent: 'deny',
   blockAnalytics: ['stats.example.com'],
@@ -96,6 +96,8 @@ Tests don't count as visitors in analytics by default:
 - `blockAnalytics`: requests to common analytics services (Google Tag Manager, Google Analytics, Matomo Cloud, Hotjar, Microsoft Clarity) get an empty response, as do standard analytics paths on any domain (`/gtm.js`, `/gtag/js`, `/g/collect`, `matomo.js`/`.php`), which covers server-side Tag Manager and self-hosted Matomo. Give a list to block extra domains too, or `false` to allow them.
 
 Neither stops analytics sent from the server. Screenshots can differ from runs with consent given, e.g. placeholders instead of embeds.
+
+`maxDiffPixels` is how many pixels a screenshot may differ from its baseline (default 50). Rendering noise on stable pages is typically 0, so keep it low; hide elements that render differently on each load with `screenshotCss` instead of raising it. `menuMaxDiffPixels` sets the limit for the mobile menu screenshot only, for menus whose text renders slightly differently on each load.
 
 `axeTags` replaces the whole default list, so a project that sets it doesn't get later changes to the default.
 

@@ -54,7 +54,7 @@ getMobileUrls().forEach((url) => {
 
       const screenshotOptions = {
         fullPage: true,
-        maxDiffPixelRatio: config.maxDiffPixelRatio,
+        maxDiffPixels: config.maxDiffPixels,
         timeout: 30000,
         animations: 'disabled',
         mask: [page.locator('img')],
@@ -76,6 +76,7 @@ getMobileUrls().forEach((url) => {
           ...screenshotOptions,
           fullPage: false,
           mask: [],
+          maxDiffPixels: config.menuMaxDiffPixels,
         });
       }
     }

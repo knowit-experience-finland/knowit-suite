@@ -23,7 +23,7 @@ getUrls().forEach((url) => {
       await runHook('beforeScreenshot', { page, url });
       await expect(page).toHaveScreenshot({
         fullPage: true,
-        maxDiffPixelRatio: config.maxDiffPixelRatio,
+        maxDiffPixels: config.maxDiffPixels,
         timeout: 30000,
         animations: 'disabled',
         mask: [page.locator('img')],

@@ -39,7 +39,8 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  * @property {string[]} [spinnerSelectors] Loaders to wait for before screenshots.
  * @property {string[]} [axeExclude] Selectors left out of the accessibility scan.
  * @property {string[]} [axeTags] Axe rule groups to check. Replaces the default list.
- * @property {number} [maxDiffPixelRatio] Allowed screenshot difference, 0–1.
+ * @property {number} [maxDiffPixels] Pixels a screenshot may differ from its baseline.
+ * @property {number} [menuMaxDiffPixels] Same for the mobile menu screenshot; defaults to maxDiffPixels.
  * @property {string[]} [screenshotCss] Extra stylesheets applied for screenshots.
  * @property {'deny' | 'grant'} [consent] Cookie consent given by the Cookiebot stub. Denied by default.
  * @property {boolean | string[]} [blockAnalytics] Block analytics services (default), false to allow, or extra domains to block.
@@ -77,7 +78,7 @@ export const config = {
     'wcag22aa',
     'best-practice',
   ],
-  maxDiffPixelRatio: 0.005,
+  maxDiffPixels: 50,
   screenshotCss: [],
   consent: 'deny',
   blockAnalytics: true,
@@ -88,6 +89,8 @@ export const config = {
   playwright: {},
   ...suiteConfig,
 };
+
+config.menuMaxDiffPixels ??= config.maxDiffPixels;
 
 if (!['deny', 'grant'].includes(config.consent)) {
   throw new Error(
