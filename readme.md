@@ -248,9 +248,12 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 
 ## Changelog
 
-### 1.1.0 – 2026-10-15
+### 2.0.0 – 2026-10-22
 
-- Shared tests moved to a `knowit-suite/` folder that is copied into projects as is; project settings live in `project.config.js`, snapshots in `snapshots/`. Requires `"type": "module"`.
-- New: mobile screenshots with menu open, reflow check, Lighthouse thresholds, unlocking protected pages, axe best-practice rules (rule groups set with `axeTags`).
-- Tests run with reduced motion, so regenerate screenshot baselines.
+- Projects install the suite from GitHub and copy `knowit-suite/` into place with `knowit-suite sync` from `postinstall` (gitignored). Settings live in `knowit-suite.config.js`, snapshots in `snapshots/`. Requires `"type": "module"`.
+- New: mobile screenshots with menu open, reflow check, Lighthouse thresholds, unlocking protected pages, hooks, `disable`, fixture overrides, axe best-practice rules (`axeTags`).
+- Tests deny cookie consent and block analytics and third-party embeds by default, and run with reduced motion.
+- Screenshot tolerance is in pixels: `maxDiffPixels` (default 50).
 - Fixed: uncaught page errors are now caught.
+
+Upgrading from 1.0: install the suite and add the `postinstall` script (see [Adding the suite to a project](#adding-the-suite-to-a-project)), move URLs from `urls.js` to `knowit-suite.config.js` as paths, remove the copied shared tests and helpers, and regenerate screenshot baselines.
