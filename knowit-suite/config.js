@@ -1,7 +1,26 @@
 import suiteConfig from '../knowit-suite.config.js';
+import { answerCookiebot } from './helpers/helperCookiebotBlock.js';
 
 const BASE_URL = (process.env.BASE_URL ?? '').replace(/\/+$/, '');
 const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
+const testUrl = process.env.TEST_URL?.trim();
+const testUrls = testUrl ? testUrl.split(',').map((url) => url.trim()) : null;
+
+for (const url of testUrls ?? []) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(
+      'TEST_URL must contain comma-separated absolute HTTP(S) URLs.'
+    );
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error(
+      'TEST_URL must contain comma-separated absolute HTTP(S) URLs.'
+    );
+  }
+}
 
 /**
  * Opens a protected page, e.g. fills in a password form, after the page has
@@ -35,6 +54,7 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  * @property {Record<string, UrlEntry[]>} [mobileUrls] URLs per URL_CATEGORY for the mobile screenshots.
  * @property {Record<string, UrlEntry[]>} [lighthouseUrls] URLs per URL_CATEGORY for the Lighthouse audit.
  * @property {Record<string, number>} [lighthouseThresholds] Minimum Lighthouse scores per category, 0–100.
+ * @property {((args: { page: import('@playwright/test').Page, consent: 'deny' | 'grant' }) => Promise<void>) | null} [lighthouseConsent] Answers the site's real cookie banner before each Lighthouse audit, so scores don't depend on where the tests run. Defaults to answering Cookiebot; null to skip.
  * @property {string} [menuToggleSelector] Mobile menu toggle; the menu is opened for a second screenshot.
  * @property {string[]} [spinnerSelectors] Loaders to wait for before screenshots.
  * @property {string[]} [axeExclude] Selectors left out of the accessibility scan.
@@ -66,6 +86,7 @@ export const config = {
     'best-practices': 50,
     seo: 50,
   },
+  lighthouseConsent: answerCookiebot,
   menuToggleSelector: '',
   spinnerSelectors: [],
   axeExclude: [],
@@ -125,11 +146,12 @@ const urls = resolveUrls(config.urls);
 const mobileUrls = resolveUrls(config.mobileUrls);
 const lighthouseUrls = resolveUrls(config.lighthouseUrls);
 
-export const getUrls = () => urls;
+// Resolve configured entries even with an override, so matching unlock steps stay available.
+export const getUrls = () => testUrls ?? urls;
 
-export const getMobileUrls = () => mobileUrls;
+export const getMobileUrls = () => testUrls ?? mobileUrls;
 
-export const getLighthouseUrls = () => lighthouseUrls;
+export const getLighthouseUrls = () => testUrls ?? lighthouseUrls;
 
 /**
  * Unlock step of a protected page, if it has one.
