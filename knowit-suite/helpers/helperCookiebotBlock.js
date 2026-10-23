@@ -63,7 +63,8 @@ export const stubCookiebot = async (context, { consent = 'deny' } = {}) => {
  * @param {{ page: import('@playwright/test').Page, consent: 'deny' | 'grant' }} args
  */
 export const answerCookiebot = async ({ page, consent }) => {
-  if (!(await page.locator('script[src*="cookiebot.com"]').count())) {
+  const script = 'script[src*="cookiebot.com"], script[src*="cookiebot.eu"]';
+  if (!(await page.locator(script).count())) {
     return;
   }
   await page
@@ -80,5 +81,13 @@ export const answerCookiebot = async ({ page, consent }) => {
     (optIn) => window.Cookiebot.submitCustomConsent(optIn, optIn, optIn),
     granted
   );
-  await page.waitForFunction(() => document.cookie.includes('CookieConsent='));
+  // Cookiebot stores the answer asynchronously, and an earlier cookie (e.g.
+  // regional auto-consent) may exist, so wait for this explicit answer
+  await page.waitForFunction(
+    (optIn) =>
+      decodeURIComponent(document.cookie).includes(
+        `preferences:${optIn},statistics:${optIn},marketing:${optIn},method:'explicit'`
+      ),
+    granted
+  );
 };
