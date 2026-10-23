@@ -3,6 +3,24 @@ import { answerCookiebot } from './helpers/helperCookiebotBlock.js';
 
 const BASE_URL = (process.env.BASE_URL ?? '').replace(/\/+$/, '');
 const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
+const testUrl = process.env.TEST_URL?.trim();
+const testUrls = testUrl ? testUrl.split(',').map((url) => url.trim()) : null;
+
+for (const url of testUrls ?? []) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(
+      'TEST_URL must contain comma-separated absolute HTTP(S) URLs.'
+    );
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error(
+      'TEST_URL must contain comma-separated absolute HTTP(S) URLs.'
+    );
+  }
+}
 
 /**
  * Opens a protected page, e.g. fills in a password form, after the page has
@@ -128,11 +146,12 @@ const urls = resolveUrls(config.urls);
 const mobileUrls = resolveUrls(config.mobileUrls);
 const lighthouseUrls = resolveUrls(config.lighthouseUrls);
 
-export const getUrls = () => urls;
+// Resolve configured entries even with an override, so matching unlock steps stay available.
+export const getUrls = () => testUrls ?? urls;
 
-export const getMobileUrls = () => mobileUrls;
+export const getMobileUrls = () => testUrls ?? mobileUrls;
 
-export const getLighthouseUrls = () => lighthouseUrls;
+export const getLighthouseUrls = () => testUrls ?? lighthouseUrls;
 
 /**
  * Unlock step of a protected page, if it has one.
