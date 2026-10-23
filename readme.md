@@ -45,7 +45,7 @@ snapshots/             screenshots (kept out of knowit-suite/)
 In the project's test folder (needs `"type": "module"` in `package.json`):
 
 ```bash
-npm i -D github:knowit-experience-finland/knowit-suite#v2.0.0
+npm i -D github:knowit-experience-finland/knowit-suite#v2.1.0
 ```
 
 ```json
@@ -94,6 +94,8 @@ Tests don't count as visitors in analytics by default:
 - `consent`: the Cookiebot stub denies consent (`'deny'`, default) or gives it (`'grant'`), e.g. for testing tracking scripts. With consent denied, third-party iframes (YouTube, maps, social media) get an empty page, as Cookiebot holds them back from real visitors without consent.
 - `allowedEmbeds`: domains whose iframes still load when consent is denied, for embeds that don't need consent (e.g. `challenges.cloudflare.com` for Turnstile).
 - `blockAnalytics`: requests to common analytics services (Google Tag Manager, Google Analytics, Matomo Cloud, Hotjar, Microsoft Clarity) get an empty response, as do standard analytics paths on any domain (`/gtm.js`, `/gtag/js`, `/g/collect`, `matomo.js`/`.php`), which covers server-side Tag Manager and self-hosted Matomo. Give a list to block extra domains too, or `false` to allow them.
+
+- `lighthouseConsent`: Lighthouse audits the site with its real cookie banner, which is answered before each audit like `consent` says. Without an answer, where the tests run decides the score: e.g. Cookiebot loads tracking without consent outside the EU if its region rules allow it. The default answers Cookiebot and skips pages without it. For another consent tool, give your own step, e.g. `async ({ page, consent }) => page.click(consent === 'grant' ? '#accept-all' : '#reject-all')`, or `null` for sites without a banner, which saves a page load per audit.
 
 Neither stops analytics sent from the server. Screenshots can differ from runs with consent given, e.g. placeholders instead of embeds.
 
@@ -247,6 +249,12 @@ To test new URLs with the shared specs, update `knowit-suite.config.js`. Custom 
 See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for more information on writing tests.
 
 ## Changelog
+
+### 2.1.0 – 2026-10-23
+
+- New: `lighthouseConsent` answers the site's real cookie banner before each Lighthouse audit, like `consent` says, so scores don't depend on where the tests run. Defaults to answering Cookiebot.
+- Projects with Cookiebot and `consent: 'grant'` are now audited with tracking allowed, which can lower performance scores.
+- Projects without Cookiebot get an extra page load per audit; `lighthouseConsent: null` turns it off.
 
 ### 2.0.0 – 2026-10-22
 
