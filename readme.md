@@ -45,7 +45,7 @@ snapshots/             screenshots (kept out of knowit-suite/)
 In the project's test folder (needs `"type": "module"` in `package.json`):
 
 ```bash
-npm i -D github:knowit-experience-finland/knowit-suite#v2.0.0
+npm i -D github:knowit-experience-finland/knowit-suite#v2.1.0
 ```
 
 ```json
@@ -94,6 +94,8 @@ Tests don't count as visitors in analytics by default:
 - `consent`: the Cookiebot stub denies consent (`'deny'`, default) or gives it (`'grant'`), e.g. for testing tracking scripts. With consent denied, third-party iframes (YouTube, maps, social media) get an empty page, as Cookiebot holds them back from real visitors without consent.
 - `allowedEmbeds`: domains whose iframes still load when consent is denied, for embeds that don't need consent (e.g. `challenges.cloudflare.com` for Turnstile).
 - `blockAnalytics`: requests to common analytics services (Google Tag Manager, Google Analytics, Matomo Cloud, Hotjar, Microsoft Clarity) get an empty response, as do standard analytics paths on any domain (`/gtm.js`, `/gtag/js`, `/g/collect`, `matomo.js`/`.php`), which covers server-side Tag Manager and self-hosted Matomo. Give a list to block extra domains too, or `false` to allow them.
+
+- `lighthouseConsent`: Lighthouse audits the site with its real cookie banner, which is answered before each audit like `consent` says. Without an answer, where the tests run decides the score: e.g. Cookiebot loads tracking without consent outside the EU if its region rules allow it. The default answers Cookiebot and skips pages without it. For another consent tool, give your own step, e.g. `async ({ page, consent }) => page.click(consent === 'grant' ? '#accept-all' : '#reject-all')`, or `null` for sites without a banner, which saves a page load per audit.
 
 Neither stops analytics sent from the server. Screenshots can differ from runs with consent given, e.g. placeholders instead of embeds.
 
@@ -180,6 +182,47 @@ npx playwright test --update-snapshots
 - Want to run only specific test: `npx playwright test accessibility` and only test files matching `accessibility` will be run.
 - `--project=mobile` runs only the mobile screenshots, `--project=lighthouse` only Lighthouse.
 
+### Testing specific pages
+
+Use `TEST_URL` to replace all configured desktop, mobile, and Lighthouse URL lists for one run:
+
+```bash
+TEST_URL="https://example.com/some-page/" npx playwright test
+```
+
+For multiple pages, separate full URLs with commas (spaces around each URL are ignored):
+
+```bash
+TEST_URL="https://example.com/, https://example.com/contact/" npx playwright test
+```
+
+Every listed page runs through all enabled shared tests: accessibility, console errors, desktop screenshots, mobile screenshots, and Lighthouse. Existing settings, hooks, and matching configured unlock steps still apply. `disable`, test filters, and `--project` still control which tests run. Screenshot tests need baselines as usual.
+
+`TEST_URL` accepts absolute HTTP(S) URLs and works without `BASE_URL`. It overrides URL lists regardless of `URL_CATEGORY`; an empty or whitespace-only value uses the configured lists. Encode literal commas in a URL as `%2C`.
+
+To skip both desktop and mobile regression for the selected pages:
+
+```bash
+TEST_URL="https://example.com/some-page/" npx playwright test accessibility errors lighthouse
+```
+
+### Scanning pages from the sitemap
+
+`SITEMAP_SCAN=true` runs the accessibility and console error tests on pages from the site's sitemap instead of the configured URLs:
+
+```bash
+SITEMAP_SCAN=true npx playwright test
+```
+
+- The sitemap is `BASE_URL/sitemap.xml`, or `BASE_URL/sitemap_index.xml` if there is none. `SITEMAP_URL` sets another one. Sitemap indexes are followed; only pages on `BASE_URL`'s domain are tested.
+- `SITEMAP_LIMIT` pages are tested, 50 by default; `0` tests all of them. The sample takes turns between kinds of pages, grouped by URL pattern (e.g. `/news/2024/05/some-title/` and `/news/2023/11/other-title/` are one kind), so 50 pages aren't 50 news articles. Path parts with numbers (dates, magazine issues) count as the same, and the most common kinds go first if there are more kinds than the limit. When sampling, only the first of numbered sitemaps (`post-sitemap2.xml`…) is read.
+- Pages are tested one at a time, to go easy on the site. A 50-page scan takes a few minutes.
+- Screenshots, Lighthouse and the project's own tests don't run in a scan. Settings, hooks and unlock steps apply as usual. `TEST_URL` can't be combined with it.
+
+### Summary
+
+Every run also writes `playwright-report/summary.html`, a one-page overview to share e.g. with a client: how many pages were tested, accessibility issues grouped by rule and console errors grouped by message (each with the number of pages and example pages), Lighthouse scores, and other failed tests. The HTML report gets a bar at the top with the totals and a link to the summary, and the summary links back to the report, so publish the whole `playwright-report/` folder. A project that sets its own `reporter` in `playwright` gets it by adding `['./knowit-suite/reporters/summary.js']` after the HTML reporter.
+
 ## URLs
 
 URLs to test are managed in `knowit-suite.config.js`. Paths starting with `/` are prefixed with `BASE_URL`, full URLs are used as is.
@@ -247,6 +290,14 @@ To test new URLs with the shared specs, update `knowit-suite.config.js`. Custom 
 See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for more information on writing tests.
 
 ## Changelog
+
+### 2.1.0 – 2026-10-23
+
+- New: `lighthouseConsent` answers the site's real cookie banner before each Lighthouse audit, like `consent` says, so scores don't depend on where the tests run. Defaults to answering Cookiebot.
+- Projects with Cookiebot and `consent: 'grant'` are now audited with tracking allowed, which can lower performance scores.
+- Projects without Cookiebot get an extra page load per audit; `lighthouseConsent: null` turns it off.
+- New: `SITEMAP_SCAN=true` runs the accessibility and console error tests on a varied sample of the sitemap's pages (`SITEMAP_LIMIT`, default 50). Based on Ville Huumo's sitemap scan.
+- New: `playwright-report/summary.html`, a one-page overview of each run.
 
 ### 2.0.0 – 2026-10-22
 

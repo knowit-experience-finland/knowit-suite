@@ -1,7 +1,27 @@
 import suiteConfig from '../knowit-suite.config.js';
+import { answerCookiebot } from './helpers/helperCookiebotBlock.js';
+import { getSitemapPages } from './helpers/sitemap.js';
 
 const BASE_URL = (process.env.BASE_URL ?? '').replace(/\/+$/, '');
 const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
+const testUrl = process.env.TEST_URL?.trim();
+const testUrls = testUrl ? testUrl.split(',').map((url) => url.trim()) : null;
+
+for (const url of testUrls ?? []) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(
+      'TEST_URL must contain comma-separated absolute HTTP(S) URLs.'
+    );
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error(
+      'TEST_URL must contain comma-separated absolute HTTP(S) URLs.'
+    );
+  }
+}
 
 /**
  * Opens a protected page, e.g. fills in a password form, after the page has
@@ -35,6 +55,7 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  * @property {Record<string, UrlEntry[]>} [mobileUrls] URLs per URL_CATEGORY for the mobile screenshots.
  * @property {Record<string, UrlEntry[]>} [lighthouseUrls] URLs per URL_CATEGORY for the Lighthouse audit.
  * @property {Record<string, number>} [lighthouseThresholds] Minimum Lighthouse scores per category, 0–100.
+ * @property {((args: { page: import('@playwright/test').Page, consent: 'deny' | 'grant' }) => Promise<void>) | null} [lighthouseConsent] Answers the site's real cookie banner before each Lighthouse audit, so scores don't depend on where the tests run. Defaults to answering Cookiebot; null to skip.
  * @property {string} [menuToggleSelector] Mobile menu toggle; the menu is opened for a second screenshot.
  * @property {string[]} [spinnerSelectors] Loaders to wait for before screenshots.
  * @property {string[]} [axeExclude] Selectors left out of the accessibility scan.
@@ -66,6 +87,7 @@ export const config = {
     'best-practices': 50,
     seo: 50,
   },
+  lighthouseConsent: answerCookiebot,
   menuToggleSelector: '',
   spinnerSelectors: [],
   axeExclude: [],
@@ -98,6 +120,36 @@ if (!['deny', 'grant'].includes(config.consent)) {
   );
 }
 
+// Sitemap scan: a sample of the sitemap's pages in the accessibility and
+// console error tests (screenshots would need a baseline for every page)
+export const isSitemapScan = process.env.SITEMAP_SCAN === 'true';
+let sitemapUrls = null;
+
+if (isSitemapScan) {
+  if (testUrls) {
+    throw new Error('Use either TEST_URL or SITEMAP_SCAN, not both.');
+  }
+  if (!BASE_URL) {
+    throw new Error('SITEMAP_SCAN needs BASE_URL.');
+  }
+  const limit = Number(process.env.SITEMAP_LIMIT || 50);
+  if (!Number.isInteger(limit) || limit < 0) {
+    throw new Error('SITEMAP_LIMIT must be a whole number, 0 for all pages.');
+  }
+  // Read once in the main process; the test workers inherit the list
+  process.env.KNOWIT_SITEMAP_PAGES ??= JSON.stringify(
+    await getSitemapPages({
+      baseUrl: BASE_URL,
+      sitemapUrl: process.env.SITEMAP_URL,
+      limit,
+    })
+  );
+  sitemapUrls = JSON.parse(process.env.KNOWIT_SITEMAP_PAGES);
+  if (!sitemapUrls.length) {
+    throw new Error(`The sitemap has no pages on ${BASE_URL}.`);
+  }
+}
+
 // Unlock steps of protected pages, by full URL
 const unlockSteps = new Map();
 
@@ -125,11 +177,12 @@ const urls = resolveUrls(config.urls);
 const mobileUrls = resolveUrls(config.mobileUrls);
 const lighthouseUrls = resolveUrls(config.lighthouseUrls);
 
-export const getUrls = () => urls;
+// Resolve configured entries even with an override, so matching unlock steps stay available.
+export const getUrls = () => sitemapUrls ?? testUrls ?? urls;
 
-export const getMobileUrls = () => mobileUrls;
+export const getMobileUrls = () => testUrls ?? mobileUrls;
 
-export const getLighthouseUrls = () => lighthouseUrls;
+export const getLighthouseUrls = () => testUrls ?? lighthouseUrls;
 
 /**
  * Unlock step of a protected page, if it has one.
