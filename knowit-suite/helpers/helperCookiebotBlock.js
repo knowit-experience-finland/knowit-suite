@@ -83,11 +83,14 @@ export const answerCookiebot = async ({ page, consent }) => {
   );
   // Cookiebot stores the answer asynchronously, and an earlier cookie (e.g.
   // regional auto-consent) may exist, so wait for this explicit answer
-  await page.waitForFunction(
-    (optIn) =>
-      decodeURIComponent(document.cookie).includes(
-        `preferences:${optIn},statistics:${optIn},marketing:${optIn},method:'explicit'`
-      ),
-    granted
-  );
+  await page.waitForFunction((optIn) => {
+    // Only this cookie: decoding others, e.g. "discount=20%", can throw
+    const value = document.cookie
+      .split('; ')
+      .find((cookie) => cookie.startsWith('CookieConsent='))
+      ?.slice('CookieConsent='.length);
+    return decodeURIComponent(value ?? '').includes(
+      `preferences:${optIn},statistics:${optIn},marketing:${optIn},method:'explicit'`
+    );
+  }, granted);
 };
