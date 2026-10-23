@@ -23,7 +23,8 @@
     "test": "npx playwright test",
     "test:clean": "npx playwright test --update-snapshots",
     "about:setup": "echo \"Once after cloning this repo: browsers and Git hooks\"",
-    "setup": "npx playwright install && husky"
+    "setup": "npx playwright install && husky",
+    "test:unit": "node --test unit/*.test.js"
   },
   "peerDependencies": {
     "@axe-core/playwright": "^4.10.1",

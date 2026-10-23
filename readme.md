@@ -206,6 +206,23 @@ To skip both desktop and mobile regression for the selected pages:
 TEST_URL="https://example.com/some-page/" npx playwright test accessibility errors lighthouse
 ```
 
+### Scanning pages from the sitemap
+
+`SITEMAP_SCAN=true` runs the accessibility and console error tests on pages from the site's sitemap instead of the configured URLs:
+
+```bash
+SITEMAP_SCAN=true npx playwright test
+```
+
+- The sitemap is `BASE_URL/sitemap.xml`, or `BASE_URL/sitemap_index.xml` if there is none. `SITEMAP_URL` sets another one. Sitemap indexes are followed; only pages on `BASE_URL`'s domain are tested.
+- `SITEMAP_LIMIT` pages are tested, 50 by default; `0` tests all of them. The sample takes turns between kinds of pages, grouped by URL pattern (e.g. `/news/2024/05/some-title/` and `/news/2023/11/other-title/` are one kind), so 50 pages aren't 50 news articles. Path parts with numbers (dates, magazine issues) count as the same, and the most common kinds go first if there are more kinds than the limit. When sampling, only the first of numbered sitemaps (`post-sitemap2.xml`…) is read.
+- Pages are tested one at a time, to go easy on the site. A 50-page scan takes a few minutes.
+- Screenshots, Lighthouse and the project's own tests don't run in a scan. Settings, hooks and unlock steps apply as usual. `TEST_URL` can't be combined with it.
+
+### Summary
+
+Every run also writes `playwright-report/summary.html`, a one-page overview to share e.g. with a client: how many pages were tested, accessibility issues grouped by rule and console errors grouped by message (each with the number of pages and example pages), Lighthouse scores, and other failed tests. The HTML report gets a bar at the top with the totals and a link to the summary, and the summary links back to the report, so publish the whole `playwright-report/` folder. A project that sets its own `reporter` in `playwright` gets it by adding `['./knowit-suite/reporters/summary.js']` after the HTML reporter.
+
 ## URLs
 
 URLs to test are managed in `knowit-suite.config.js`. Paths starting with `/` are prefixed with `BASE_URL`, full URLs are used as is.
@@ -279,6 +296,8 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 - New: `lighthouseConsent` answers the site's real cookie banner before each Lighthouse audit, like `consent` says, so scores don't depend on where the tests run. Defaults to answering Cookiebot.
 - Projects with Cookiebot and `consent: 'grant'` are now audited with tracking allowed, which can lower performance scores.
 - Projects without Cookiebot get an extra page load per audit; `lighthouseConsent: null` turns it off.
+- New: `SITEMAP_SCAN=true` runs the accessibility and console error tests on a varied sample of the sitemap's pages (`SITEMAP_LIMIT`, default 50). Based on Ville Huumo's sitemap scan.
+- New: `playwright-report/summary.html`, a one-page overview of each run.
 
 ### 2.0.0 – 2026-10-22
 
