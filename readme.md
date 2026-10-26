@@ -272,6 +272,10 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 
 ## Changelog
 
+### Unreleased
+
+- New: `TEST_URL` runs the shared tests on the given pages instead of the configured URL lists, e.g. `TEST_URL="https://example.com/some-page/" npx playwright test`. Works without `BASE_URL`.
+
 ### 2.0.0 – 2026-10-22
 
 - Projects install the suite from GitHub and copy `knowit-suite/` into place with `knowit-suite sync` from `postinstall` (gitignored). Settings live in `knowit-suite.config.js`, snapshots in `snapshots/`. Requires `"type": "module"`.
