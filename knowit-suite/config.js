@@ -1,5 +1,6 @@
 import suiteConfig from '../knowit-suite.config.js';
 import { answerCookiebot } from './helpers/helperCookiebotBlock.js';
+import { getSitemapPages } from './helpers/sitemap.js';
 
 const BASE_URL = (process.env.BASE_URL ?? '').replace(/\/+$/, '');
 const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
@@ -119,6 +120,36 @@ if (!['deny', 'grant'].includes(config.consent)) {
   );
 }
 
+// Sitemap scan: a sample of the sitemap's pages in the accessibility and
+// console error tests (screenshots would need a baseline for every page)
+export const isSitemapScan = process.env.SITEMAP_SCAN === 'true';
+let sitemapUrls = null;
+
+if (isSitemapScan) {
+  if (testUrls) {
+    throw new Error('Use either TEST_URL or SITEMAP_SCAN, not both.');
+  }
+  if (!BASE_URL) {
+    throw new Error('SITEMAP_SCAN needs BASE_URL.');
+  }
+  const limit = Number(process.env.SITEMAP_LIMIT || 50);
+  if (!Number.isInteger(limit) || limit < 0) {
+    throw new Error('SITEMAP_LIMIT must be a whole number, 0 for all pages.');
+  }
+  // Read once in the main process; the test workers inherit the list
+  process.env.KNOWIT_SITEMAP_PAGES ??= JSON.stringify(
+    await getSitemapPages({
+      baseUrl: BASE_URL,
+      sitemapUrl: process.env.SITEMAP_URL,
+      limit,
+    })
+  );
+  sitemapUrls = JSON.parse(process.env.KNOWIT_SITEMAP_PAGES);
+  if (!sitemapUrls.length) {
+    throw new Error(`The sitemap has no pages on ${BASE_URL}.`);
+  }
+}
+
 // Unlock steps of protected pages, by full URL
 const unlockSteps = new Map();
 
@@ -147,7 +178,7 @@ const mobileUrls = resolveUrls(config.mobileUrls);
 const lighthouseUrls = resolveUrls(config.lighthouseUrls);
 
 // Resolve configured entries even with an override, so matching unlock steps stay available.
-export const getUrls = () => testUrls ?? urls;
+export const getUrls = () => sitemapUrls ?? testUrls ?? urls;
 
 export const getMobileUrls = () => testUrls ?? mobileUrls;
 
