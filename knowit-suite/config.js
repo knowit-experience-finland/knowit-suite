@@ -202,7 +202,13 @@ const resolveUrls = async (urls) => {
     ...(urls[URL_CATEGORY] ?? urls.test ?? []),
   ]) {
     if (entry.sitemap) {
-      fromSitemap.push(...(await readSitemap(entry.sitemap)));
+      // TEST_URL replaces the lists, so the sitemap isn't needed
+      if (!testUrls) {
+        // One by one: a whole sitemap can have too many pages for push(...pages)
+        for (const url of await readSitemap(entry.sitemap)) {
+          fromSitemap.push(url);
+        }
+      }
       continue;
     }
     const { path, unlock } =
