@@ -180,6 +180,30 @@ npx playwright test --update-snapshots
 - Want to run only specific test: `npx playwright test accessibility` and only test files matching `accessibility` will be run.
 - `--project=mobile` runs only the mobile screenshots, `--project=lighthouse` only Lighthouse.
 
+### Testing specific pages
+
+Use `TEST_URL` to replace all configured desktop, mobile, and Lighthouse URL lists for one run:
+
+```bash
+TEST_URL="https://example.com/some-page/" npx playwright test
+```
+
+For multiple pages, separate full URLs with commas (spaces around each URL are ignored):
+
+```bash
+TEST_URL="https://example.com/, https://example.com/contact/" npx playwright test
+```
+
+Every listed page runs through all enabled shared tests: accessibility, console errors, desktop screenshots, mobile screenshots, and Lighthouse. Existing settings, hooks, and matching configured unlock steps still apply. `disable`, test filters, and `--project` still control which tests run. Screenshot tests need baselines as usual.
+
+`TEST_URL` accepts absolute HTTP(S) URLs and works without `BASE_URL`. It overrides URL lists regardless of `URL_CATEGORY`; an empty or whitespace-only value uses the configured lists. Encode literal commas in a URL as `%2C`.
+
+To skip both desktop and mobile regression for the selected pages:
+
+```bash
+TEST_URL="https://example.com/some-page/" npx playwright test accessibility errors lighthouse
+```
+
 ## URLs
 
 URLs to test are managed in `knowit-suite.config.js`. Paths starting with `/` are prefixed with `BASE_URL`, full URLs are used as is.
@@ -247,6 +271,10 @@ To test new URLs with the shared specs, update `knowit-suite.config.js`. Custom 
 See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for more information on writing tests.
 
 ## Changelog
+
+### Unreleased
+
+- New: `TEST_URL` runs the shared tests on the given pages instead of the configured URL lists, e.g. `TEST_URL="https://example.com/some-page/" npx playwright test`. Works without `BASE_URL`.
 
 ### 2.0.0 – 2026-10-22
 
