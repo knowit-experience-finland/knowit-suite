@@ -45,7 +45,7 @@ snapshots/             screenshots (kept out of knowit-suite/)
 In the project's test folder (needs `"type": "module"` in `package.json`):
 
 ```bash
-npm i -D github:knowit-experience-finland/knowit-suite#v2.1.0
+npm i -D github:knowit-experience-finland/knowit-suite#v2.0.0
 ```
 
 ```json
@@ -250,7 +250,7 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 
 ## Changelog
 
-### 2.1.0 – 2026-10-23
+### Unreleased
 
 - New: `lighthouseConsent` answers the site's real cookie banner before each Lighthouse audit, like `consent` says, so scores don't depend on where the tests run. Defaults to answering Cookiebot.
 - Projects with Cookiebot and `consent: 'grant'` are now audited with tracking allowed, which can lower performance scores.
