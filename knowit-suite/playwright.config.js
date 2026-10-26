@@ -1,7 +1,7 @@
 // @ts-check
 import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
-import { config, isSitemapScan } from './config.js';
+import { config } from './config.js';
 
 if (!process.env.BASE_URL && !process.env.TEST_URL?.trim()) {
   throw new Error(
@@ -32,38 +32,6 @@ const DISABLED_SPECS = config.disable.map((name) => {
   return sharedSpec(name);
 });
 
-const PROJECTS = [
-  {
-    name: 'chromium',
-    use: { ...devices['Desktop Chrome'] },
-    testIgnore: [MOBILE_SPEC, LIGHTHOUSE_SPEC, ...DISABLED_SPECS],
-  },
-  {
-    name: 'mobile',
-    /* 320px is the WCAG 1.4.10 reflow width */
-    use: { ...devices['Pixel 7'], viewport: { width: 320, height: 640 } },
-    testMatch: MOBILE_SPEC,
-    testIgnore: DISABLED_SPECS,
-  },
-  {
-    /* Lighthouse launches its own browser, mobile by default */
-    name: 'lighthouse',
-    testMatch: LIGHTHOUSE_SPEC,
-    testIgnore: DISABLED_SPECS,
-  },
-];
-
-// Sitemap scan: the sitemap's pages in the accessibility and console error
-// tests only, not in screenshots, Lighthouse or the project's own tests
-const SITEMAP_PROJECTS = [
-  {
-    name: 'sitemap',
-    use: { ...devices['Desktop Chrome'] },
-    testMatch: [sharedSpec('accessibility'), sharedSpec('errors')],
-    testIgnore: DISABLED_SPECS,
-  },
-];
-
 /**
  * Shared config, re-exported by the project's own `playwright.config.js`.
  * Relative paths resolve from the project root. Override anything with
@@ -83,8 +51,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Five minute tests, long pages & slow environments */
   timeout: 5 * 60 * 1000,
-  /* Opt out of parallel tests on CI, and in the sitemap scan to go easy on the site */
-  workers: process.env.CI || isSitemapScan ? 1 : undefined,
+  /* Opt out of parallel tests on CI. */
+  workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   /* The summary writes summary.html into the HTML report after it, so keep this order */
   reporter: [['html'], ['./knowit-suite/reporters/summary.js']],
@@ -101,8 +69,26 @@ export default defineConfig({
     trace: 'on-first-retry',
     ...playwright.use,
   },
-  projects:
-    playwright.projects ?? (isSitemapScan ? SITEMAP_PROJECTS : PROJECTS),
+  projects: playwright.projects ?? [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: [MOBILE_SPEC, LIGHTHOUSE_SPEC, ...DISABLED_SPECS],
+    },
+    {
+      name: 'mobile',
+      /* 320px is the WCAG 1.4.10 reflow width */
+      use: { ...devices['Pixel 7'], viewport: { width: 320, height: 640 } },
+      testMatch: MOBILE_SPEC,
+      testIgnore: DISABLED_SPECS,
+    },
+    {
+      /* Lighthouse launches its own browser, mobile by default */
+      name: 'lighthouse',
+      testMatch: LIGHTHOUSE_SPEC,
+      testIgnore: DISABLED_SPECS,
+    },
+  ],
   expect: {
     ...playwright.expect,
     toHaveScreenshot: {

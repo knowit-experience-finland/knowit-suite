@@ -1,9 +1,9 @@
-import { config, getUrls, urlToPath, runHook } from '../config.js';
+import { config, getRegressionUrls, urlToPath, runHook } from '../config.js';
 import { expect, test } from '../helpers/fixtures.js';
 import { waitForPageToSettle } from '../helpers/helperWaitForPageToSettle.js';
 import { openUrl } from '../helpers/helperOpenUrl.js';
 
-getUrls().forEach((url) => {
+getRegressionUrls().forEach((url) => {
   test(
     `Should match visually saved state: ${urlToPath(url)}`,
     {

@@ -1,6 +1,8 @@
-// Pages for the sitemap scan (SITEMAP_SCAN=true): reads the site's sitemap
+// Sitemap pages for the URL lists (`sitemap()`): reads the site's sitemap
 // and picks a varied sample, a few pages of each kind instead of the first
 // N news articles.
+
+import { request as playwrightRequest } from '@playwright/test';
 
 const RETRIES = 2;
 
@@ -9,22 +11,23 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 /**
  * Sitemap XML, retrying rate limiting, server errors and network failures.
  *
+ * @param {import('@playwright/test').APIRequestContext} request
  * @param {string} url
  * @returns {Promise<string>}
  */
-const fetchSitemap = async (url) => {
+const fetchSitemap = async (request, url) => {
   let reason;
   for (let attempt = 0; attempt <= RETRIES; attempt++) {
     if (attempt) {
       await wait(1000 * 2 ** (attempt - 1));
     }
     try {
-      const response = await fetch(url);
-      if (response.ok) {
+      const response = await request.get(url);
+      if (response.ok()) {
         return response.text();
       }
-      reason = `HTTP ${response.status}`;
-      if (response.status !== 429 && response.status < 500) {
+      reason = `HTTP ${response.status()}`;
+      if (response.status() !== 429 && response.status() < 500) {
         break;
       }
     } catch (error) {
@@ -128,14 +131,44 @@ export const selectPages = (urls, limit) => {
 };
 
 /**
- * Same-origin pages of the site's sitemap, sampled with `selectPages`.
- * Without `sitemapUrl`, tries /sitemap.xml and then /sitemap_index.xml.
- * A child sitemap that fails is skipped with a warning.
+ * A sample of the site's sitemap pages, for the URL lists in
+ * knowit-suite.config.js, e.g. `urls: { sitemap: [sitemap({ limit: 100 })] }`.
+ * The sitemap is read only when its URL category is tested.
  *
- * @param {{ baseUrl: string, sitemapUrl?: string, limit: number }} options
- * @returns {Promise<string[]>}
+ * @param {{ limit?: number, url?: string }} [options] `limit`: pages to test,
+ *   0 for all; by default `sitemapLimit` (50), SITEMAP_LIMIT overrides both.
+ *   `url`: the sitemap, by default /sitemap.xml or /sitemap_index.xml.
  */
-export const getSitemapPages = async ({ baseUrl, sitemapUrl, limit }) => {
+export const sitemap = ({ limit, url } = {}) => ({
+  sitemap: { limit, url },
+});
+
+/**
+ * Same-origin pages of the site's sitemap, sampled with `selectPages`, and
+ * how many pages were read. Without `sitemapUrl`, tries /sitemap.xml and
+ * then /sitemap_index.xml. A child sitemap that fails is skipped with a
+ * warning.
+ *
+ * @param {{ baseUrl: string, sitemapUrl?: string, limit: number, request?: import('@playwright/test').APIRequestContext }} options
+ * @returns {Promise<{ pages: string[], read: number }>}
+ */
+export const getSitemapPages = async ({ request, ...options }) => {
+  if (request) {
+    return readSitemapPages(request, options);
+  }
+  // Playwright's HTTP client, so local sites' self-signed certificates are
+  // accepted like in the tests' browsers (ignoreHTTPSErrors)
+  const context = await playwrightRequest.newContext({
+    ignoreHTTPSErrors: true,
+  });
+  try {
+    return await readSitemapPages(context, options);
+  } finally {
+    await context.dispose();
+  }
+};
+
+const readSitemapPages = async (request, { baseUrl, sitemapUrl, limit }) => {
   const base = new URL(baseUrl);
   const candidates = sitemapUrl
     ? [new URL(sitemapUrl, base).href]
@@ -147,7 +180,7 @@ export const getSitemapPages = async ({ baseUrl, sitemapUrl, limit }) => {
   const failures = [];
   for (const url of candidates) {
     try {
-      root = { url, xml: await fetchSitemap(url) };
+      root = { url, xml: await fetchSitemap(request, url) };
       break;
     } catch (error) {
       failures.push(error.message);
@@ -182,13 +215,13 @@ export const getSitemapPages = async ({ baseUrl, sitemapUrl, limit }) => {
       }
       visited.add(visitedKey(target.href));
       try {
-        await visit(target.href, await fetchSitemap(target.href));
+        await visit(target.href, await fetchSitemap(request, target.href));
       } catch (error) {
-        console.warn(`Sitemap scan skipped a sitemap: ${error.message}`);
+        console.warn(`Skipped a sitemap: ${error.message}`);
       }
     }
   };
   await visit(root.url, root.xml);
 
-  return selectPages([...pages], limit);
+  return { pages: selectPages([...pages], limit), read: pages.size };
 };
