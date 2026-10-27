@@ -250,7 +250,7 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 
 ## Changelog
 
-### Unreleased
+### 2.0.0 - 2026-10-27
 
 - New: `lighthouseConsent` answers the site's real cookie banner before each Lighthouse audit, like `consent` says, so scores don't depend on where the tests run. Defaults to answering Cookiebot.
 - Projects with Cookiebot and `consent: 'grant'` are now audited with tracking allowed, which can lower performance scores.
