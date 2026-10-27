@@ -5,6 +5,7 @@ import {
   pageGroup,
   parseSitemap,
   selectPages,
+  sitemap,
 } from '../knowit-suite/helpers/sitemap.js';
 
 const urlset = (...urls) =>
@@ -17,23 +18,29 @@ const sitemapindex = (...urls) =>
     .map((url) => `<sitemap><loc>${url}</loc></sitemap>`)
     .join('')}</sitemapindex>`;
 
-const realFetch = globalThis.fetch;
 const realWarn = console.warn;
 afterEach(() => {
-  globalThis.fetch = realFetch;
   console.warn = realWarn;
 });
 
-/** Serve sitemaps from `files`, 404 for anything else; returns requested URLs */
+/**
+ * A stand-in for Playwright's request context, serving sitemaps from `files`
+ * and 404 for anything else. `requested` lists the URLs asked for.
+ */
 const serve = (files) => {
   const requested = [];
-  globalThis.fetch = async (url) => {
-    requested.push(url);
-    return url in files
-      ? new Response(files[url])
-      : new Response('', { status: 404 });
+  const request = {
+    get: async (url) => {
+      requested.push(url);
+      const status = url in files ? 200 : 404;
+      return {
+        ok: () => status === 200,
+        status: () => status,
+        text: async () => files[url],
+      };
+    },
   };
-  return requested;
+  return { request, requested };
 };
 
 test('parseSitemap reads pages, skipping image entries', () => {
@@ -115,7 +122,7 @@ test('selectPages covers the largest groups first when there are more groups tha
 });
 
 test('getSitemapPages reads one sitemap of each family, same origin only', async () => {
-  const requested = serve({
+  const { request, requested } = serve({
     'https://example.com/sitemap_index.xml': sitemapindex(
       'https://example.com/post-sitemap1.xml',
       'https://example.com/post-sitemap2.xml',
@@ -133,21 +140,23 @@ test('getSitemapPages reads one sitemap of each family, same origin only', async
   const warnings = [];
   console.warn = (message) => warnings.push(message);
 
-  const pages = await getSitemapPages({
+  const { pages, read } = await getSitemapPages({
     baseUrl: 'https://example.com',
     limit: 50,
+    request,
   });
 
   assert.deepEqual(pages, [
     'https://example.com/news/2020/01/a/',
     'https://example.com/contact/',
   ]);
+  assert.equal(read, 2);
   assert.ok(!requested.includes('https://example.com/post-sitemap2.xml'));
   assert.match(warnings.join('\n'), /missing-sitemap\.xml: HTTP 404/);
 });
 
 test('getSitemapPages reads every sitemap when the limit is 0', async () => {
-  const requested = serve({
+  const { request, requested } = serve({
     'https://example.com/sitemap.xml': sitemapindex(
       'https://example.com/post-sitemap1.xml',
       'https://example.com/post-sitemap2.xml'
@@ -156,19 +165,30 @@ test('getSitemapPages reads every sitemap when the limit is 0', async () => {
     'https://example.com/post-sitemap2.xml': urlset('https://example.com/b/'),
   });
 
-  const pages = await getSitemapPages({
+  const { pages, read } = await getSitemapPages({
     baseUrl: 'https://example.com',
     limit: 0,
+    request,
   });
 
   assert.deepEqual(pages, ['https://example.com/a/', 'https://example.com/b/']);
+  assert.equal(read, 2);
   assert.ok(requested.includes('https://example.com/post-sitemap2.xml'));
 });
 
 test('getSitemapPages fails when no sitemap can be read', async () => {
-  serve({});
+  const { request } = serve({});
   await assert.rejects(
-    getSitemapPages({ baseUrl: 'https://example.com', limit: 50 }),
+    getSitemapPages({ baseUrl: 'https://example.com', limit: 50, request }),
     /sitemap\.xml: HTTP 404[\s\S]*sitemap_index\.xml: HTTP 404/
   );
+});
+
+test('sitemap() leaves the limit and sitemap to the defaults', () => {
+  assert.deepEqual(sitemap(), {
+    sitemap: { limit: undefined, url: undefined },
+  });
+  assert.deepEqual(sitemap({ limit: 0, url: '/custom.xml' }), {
+    sitemap: { limit: 0, url: '/custom.xml' },
+  });
 });
