@@ -1,4 +1,5 @@
 import suiteConfig from '../knowit-suite.config.js';
+import { answerCookiebot } from './helpers/helperCookiebotBlock.js';
 
 const BASE_URL = (process.env.BASE_URL ?? '').replace(/\/+$/, '');
 const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
@@ -35,6 +36,7 @@ const URL_CATEGORY = process.env.URL_CATEGORY ?? 'test';
  * @property {Record<string, UrlEntry[]>} [mobileUrls] URLs per URL_CATEGORY for the mobile screenshots.
  * @property {Record<string, UrlEntry[]>} [lighthouseUrls] URLs per URL_CATEGORY for the Lighthouse audit.
  * @property {Record<string, number>} [lighthouseThresholds] Minimum Lighthouse scores per category, 0–100.
+ * @property {((args: { page: import('@playwright/test').Page, consent: 'deny' | 'grant' }) => Promise<void>) | null} [lighthouseConsent] Answers the site's real cookie banner before each Lighthouse audit, so scores don't depend on where the tests run. Defaults to answering Cookiebot; null to skip.
  * @property {string} [menuToggleSelector] Mobile menu toggle; the menu is opened for a second screenshot.
  * @property {string[]} [spinnerSelectors] Loaders to wait for before screenshots.
  * @property {string[]} [axeExclude] Selectors left out of the accessibility scan.
@@ -66,6 +68,7 @@ export const config = {
     'best-practices': 50,
     seo: 50,
   },
+  lighthouseConsent: answerCookiebot,
   menuToggleSelector: '',
   spinnerSelectors: [],
   axeExclude: [],

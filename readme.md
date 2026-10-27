@@ -95,6 +95,8 @@ Tests don't count as visitors in analytics by default:
 - `allowedEmbeds`: domains whose iframes still load when consent is denied, for embeds that don't need consent (e.g. `challenges.cloudflare.com` for Turnstile).
 - `blockAnalytics`: requests to common analytics services (Google Tag Manager, Google Analytics, Matomo Cloud, Hotjar, Microsoft Clarity) get an empty response, as do standard analytics paths on any domain (`/gtm.js`, `/gtag/js`, `/g/collect`, `matomo.js`/`.php`), which covers server-side Tag Manager and self-hosted Matomo. Give a list to block extra domains too, or `false` to allow them.
 
+- `lighthouseConsent`: Lighthouse audits the site with its real cookie banner, which is answered before each audit like `consent` says. Without an answer, where the tests run decides the score: e.g. Cookiebot loads tracking without consent outside the EU if its region rules allow it. The default answers Cookiebot and skips pages without it. For another consent tool, give your own step, e.g. `async ({ page, consent }) => page.click(consent === 'grant' ? '#accept-all' : '#reject-all')`, or `null` for sites without a banner, which saves a page load per audit.
+
 Neither stops analytics sent from the server. Screenshots can differ from runs with consent given, e.g. placeholders instead of embeds.
 
 `maxDiffPixels` is how many pixels a screenshot may differ from its baseline (default 50). Rendering noise on stable pages is typically 0, so keep it low; hide elements that render differently on each load with `screenshotCss` instead of raising it. `menuMaxDiffPixels` sets the limit for the mobile menu screenshot only, for menus whose text renders slightly differently on each load.
@@ -247,6 +249,12 @@ To test new URLs with the shared specs, update `knowit-suite.config.js`. Custom 
 See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for more information on writing tests.
 
 ## Changelog
+
+### Unreleased
+
+- New: `lighthouseConsent` answers the site's real cookie banner before each Lighthouse audit, like `consent` says, so scores don't depend on where the tests run. Defaults to answering Cookiebot.
+- Projects with Cookiebot and `consent: 'grant'` are now audited with tracking allowed, which can lower performance scores.
+- Projects without Cookiebot get an extra page load per audit; `lighthouseConsent: null` turns it off.
 
 ### 2.0.0 – 2026-10-22
 
