@@ -101,7 +101,13 @@ getLighthouseUrls().forEach((url) => {
 
       await testInfo.attach('lighthouse-scores.json', {
         body: JSON.stringify(
-          { url, runs: runs.map((run) => run.scores), scores, thresholds },
+          {
+            url,
+            runs: runs.map((run) => run.scores),
+            scores,
+            thresholds,
+            suggested,
+          },
           null,
           2
         ),

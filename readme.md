@@ -240,6 +240,8 @@ export default {
 
 Every run also writes `playwright-report/summary.html`, a one-page overview to share e.g. with a client: how many pages were tested, accessibility issues grouped by rule and console errors grouped by message (each with the number of pages and example pages), Lighthouse scores, and other failed tests. The HTML report gets a bar at the top with the totals and a link to the summary, and the summary links back to the report, so publish the whole `playwright-report/` folder. A project that sets its own `reporter` in `playwright` gets it by adding `['./knowit-suite/reporters/summary.js']` after the HTML reporter.
 
+`playwright-report/summary.txt` is the same summary as short plain text, also printed at the end of the run and copied with the summary's Copy as text button, to paste anywhere: chat, tickets, CI. `REPORT_URL` adds a link to the full report.
+
 ## URLs
 
 URLs to test are managed in `knowit-suite.config.js`. Paths starting with `/` are prefixed with `BASE_URL`, full URLs are used as is.
@@ -314,6 +316,7 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 - New: `TEST_URL` runs the shared tests on the given pages instead of the configured URL lists, e.g. `TEST_URL="https://example.com/some-page/" npx playwright test`. Works without `BASE_URL`.
 - New: `URL_CATEGORY=sitemap` adds a varied sample of the sitemap's pages (`SITEMAP_LIMIT`, default 50) to the accessibility and console error tests; `sitemap()` puts one in any URL list, `sitemapRegression: true` in the screenshots too. Based on Ville Huumo's sitemap scan.
 - New: `urlCategory` and `sitemapLimit` settings for a project's default URL category and sitemap sample size; `URL_CATEGORY` and `SITEMAP_LIMIT` override them.
+- New: `playwright-report/summary.txt`, the summary as plain text. `REPORT_URL` adds a link to the full report.
 - New: `playwright-report/summary.html`, a one-page overview of each run.
 - New: `lighthouseSkipAudits` leaves Lighthouse audits out of the scores. When `URL_CATEGORY` is set to `test` or `staging` it skips `is-crawlable` by default, so `noindex` on test sites no longer lowers the SEO score.
 
