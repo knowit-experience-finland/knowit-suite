@@ -24,7 +24,7 @@ Currently, the suite includes the following tests.
 - Accessibility `accessibility.spec.js` with [AXE](https://npmjs.org/@axe-core/playwright): WCAG A and AA plus axe's best-practice rules by default; `axeTags` changes the list.
 - Regression `regression.spec.js` compares screenshots using Playwright's [Visual Comparison](https://playwright.dev/docs/test-snapshots).
 - Mobile regression `regression-mobile.spec.js` takes mobile screenshots (320px wide), also with the menu open when `menuToggleSelector` is set, and fails if the page scrolls sideways (WCAG 1.4.10 Reflow).
-- Errors `errors.spec.js` checks for JavaScript console errors and uncaught exceptions.
+- Errors `errors.spec.js` checks for JavaScript console errors, uncaught exceptions and broken images (also lazy-loaded ones).
 - Lighthouse `lighthouse.spec.js` audits `lighthouseUrls` on mobile (median of 3 runs) against `lighthouseThresholds`. Thresholds never change by themselves; when scores clearly exceed them, the test suggests stricter values.
 
 ## Structure
@@ -308,13 +308,17 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 
 ### Unreleased
 
-- New: `lighthouseConsent` answers the site's real cookie banner before each Lighthouse audit, like `consent` says, so scores don't depend on where the tests run. Defaults to answering Cookiebot.
-- Projects with Cookiebot and `consent: 'grant'` are now audited with tracking allowed, which can lower performance scores.
-- Projects without Cookiebot get an extra page load per audit; `lighthouseConsent: null` turns it off.
+- New: the errors test fails on broken images, also lazy-loaded ones and every `srcset` size. Each image URL is checked with a HEAD request, so nothing is downloaded; usually under a second per page, slower with image CDNs that resize on the fly.
 - New: `TEST_URL` runs the shared tests on the given pages instead of the configured URL lists, e.g. `TEST_URL="https://example.com/some-page/" npx playwright test`. Works without `BASE_URL`.
 - New: `URL_CATEGORY=sitemap` adds a varied sample of the sitemap's pages (`SITEMAP_LIMIT`, default 50) to the accessibility and console error tests; `sitemap()` puts one in any URL list, `sitemapRegression: true` in the screenshots too. Based on Ville Huumo's sitemap scan.
 - New: `urlCategory` and `sitemapLimit` settings for a project's default URL category and sitemap sample size; `URL_CATEGORY` and `SITEMAP_LIMIT` override them.
 - New: `playwright-report/summary.html`, a one-page overview of each run.
+
+### 2.0.0 - 2026-10-27
+
+- New: `lighthouseConsent` answers the site's real cookie banner before each Lighthouse audit, like `consent` says, so scores don't depend on where the tests run. Defaults to answering Cookiebot.
+- Projects with Cookiebot and `consent: 'grant'` are now audited with tracking allowed, which can lower performance scores.
+- Projects without Cookiebot get an extra page load per audit; `lighthouseConsent: null` turns it off.
 
 ### 2.0.0 – 2026-10-22
 
