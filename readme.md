@@ -99,6 +99,8 @@ Tests don't count as visitors in analytics by default:
 
 Neither stops analytics sent from the server. Screenshots can differ from runs with consent given, e.g. placeholders instead of embeds.
 
+`lighthouseSkipAudits` leaves Lighthouse audits out of the scores, by [audit ID](https://github.com/GoogleChrome/lighthouse/tree/main/core/audits). When `URL_CATEGORY` is set to `test` or `staging`, the default skips `is-crawlable`: those sites are usually blocked from search engines on purpose (`noindex`) and would lose SEO points for it. Other categories, e.g. `production`, keep the audit, as do runs without `URL_CATEGORY`, so a site launched with search engines still blocked loses about a third of its SEO score; set the `seo` threshold high enough (e.g. 90) for that to fail. A list replaces the default, e.g. `[]` to check crawlability everywhere.
+
 `maxDiffPixels` is how many pixels a screenshot may differ from its baseline (default 50). Rendering noise on stable pages is typically 0, so keep it low; hide elements that render differently on each load with `screenshotCss` instead of raising it. `menuMaxDiffPixels` sets the limit for the mobile menu screenshot only, for menus whose text renders slightly differently on each load.
 
 `axeTags` replaces the whole default list, so a project that sets it doesn't get later changes to the default.
@@ -313,8 +315,9 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 - New: `URL_CATEGORY=sitemap` adds a varied sample of the sitemap's pages (`SITEMAP_LIMIT`, default 50) to the accessibility and console error tests; `sitemap()` puts one in any URL list, `sitemapRegression: true` in the screenshots too. Based on Ville Huumo's sitemap scan.
 - New: `urlCategory` and `sitemapLimit` settings for a project's default URL category and sitemap sample size; `URL_CATEGORY` and `SITEMAP_LIMIT` override them.
 - New: `playwright-report/summary.html`, a one-page overview of each run.
+- New: `lighthouseSkipAudits` leaves Lighthouse audits out of the scores. When `URL_CATEGORY` is set to `test` or `staging` it skips `is-crawlable` by default, so `noindex` on test sites no longer lowers the SEO score.
 
-### 2.0.0 - 2026-10-27
+### 2.1.0 – 2026-10-27
 
 - New: `lighthouseConsent` answers the site's real cookie banner before each Lighthouse audit, like `consent` says, so scores don't depend on where the tests run. Defaults to answering Cookiebot.
 - Projects with Cookiebot and `consent: 'grant'` are now audited with tracking allowed, which can lower performance scores.

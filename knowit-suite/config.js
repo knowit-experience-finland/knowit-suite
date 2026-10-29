@@ -62,6 +62,7 @@ for (const url of testUrls ?? []) {
  * @property {number} [sitemapLimit] Pages in a `sitemap()` sample that has no limit of its own, 0 for all. Default 50; SITEMAP_LIMIT overrides both.
  * @property {boolean} [sitemapRegression] Screenshots, desktop and mobile, also of the `sitemap()` pages. Off by default: each page needs a baseline.
  * @property {Record<string, number>} [lighthouseThresholds] Minimum Lighthouse scores per category, 0–100.
+ * @property {string[]} [lighthouseSkipAudits] Lighthouse audit IDs left out of the scores. Defaults to 'is-crawlable' when URL_CATEGORY is set to 'test' or 'staging', as those sites are usually noindex.
  * @property {((args: { page: import('@playwright/test').Page, consent: 'deny' | 'grant' }) => Promise<void>) | null} [lighthouseConsent] Answers the site's real cookie banner before each Lighthouse audit, so scores don't depend on where the tests run. Defaults to answering Cookiebot; null to skip.
  * @property {string} [menuToggleSelector] Mobile menu toggle; the menu is opened for a second screenshot.
  * @property {string[]} [spinnerSelectors] Loaders to wait for before screenshots.
@@ -97,6 +98,11 @@ export const config = {
     'best-practices': 50,
     seo: 50,
   },
+  // Test sites are usually noindex on purpose; other categories must be
+  // crawlable, as must an unset one (it might be production)
+  lighthouseSkipAudits: ['test', 'staging'].includes(process.env.URL_CATEGORY)
+    ? ['is-crawlable']
+    : [],
   lighthouseConsent: answerCookiebot,
   menuToggleSelector: '',
   spinnerSelectors: [],
@@ -184,6 +190,11 @@ const readSitemap = async ({ limit, url }) => {
   }
   return cache[key];
 };
+if (!Array.isArray(config.lighthouseSkipAudits)) {
+  throw new Error(
+    `lighthouseSkipAudits must be a list of audit IDs, not ${JSON.stringify(config.lighthouseSkipAudits)}.`
+  );
+}
 
 // Unlock steps of protected pages, by full URL
 const unlockSteps = new Map();
