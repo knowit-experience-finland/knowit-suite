@@ -1,6 +1,7 @@
 import { getUrls, urlToPath, runHook } from '../config.js';
 import { expect, test } from '../helpers/fixtures.js';
 import { openUrl } from '../helpers/helperOpenUrl.js';
+import { findBrokenImages } from '../helpers/helperBrokenImages.js';
 
 getUrls().forEach((url) => {
   test(
@@ -34,6 +35,11 @@ getUrls().forEach((url) => {
       await page.waitForLoadState('load', { timeout: 10_000 }); // Wait max 10s for `load` event.
       await expect(response.ok()).toBeTruthy();
       await runHook('afterLoad', { page, url });
+
+      //get the broken images
+      for (const message of await findBrokenImages(page)) {
+        logs.push({ message, type: 'broken image', location: '' });
+      }
 
       if (logs.length > 0) {
         await testInfo.attach('console logs', {
