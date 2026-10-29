@@ -47,6 +47,7 @@ const audit = async (url, port) => {
       logLevel: 'error',
       output: 'html',
       onlyCategories: Object.keys(config.lighthouseThresholds),
+      skipAudits: config.lighthouseSkipAudits,
     });
     if (lhr.runtimeError) {
       throw new Error(
