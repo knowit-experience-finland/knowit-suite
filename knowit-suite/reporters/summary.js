@@ -280,7 +280,7 @@ export const renderText = (summary, reportUrl) => {
   return `${lines.join('\n')}\n`;
 };
 
-export const renderHtml = (summary, text) => {
+export const renderHtml = (summary, text, reportUrl) => {
   const { sites, categories, thresholds } = summary;
   const accessibilityRows = summary.accessibility.map(
     (issue) => `<tr>
@@ -330,7 +330,7 @@ export const renderHtml = (summary, text) => {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Test summary – ${escape(sites.join(', '))}</title>
+<title>${escape(sites.join(', '))} – Knowit Suite test summary</title>
 <style>
   :root { --text: #1d1d1f; --muted: #6e6e73; --line: #e5e5ea; --bg: #fff; --card: #f5f5f7; --ok: #1e7b34; --bad: #b3261e; }
   @media (prefers-color-scheme: dark) { :root { --text: #f5f5f7; --muted: #a1a1a6; --line: #3a3a3c; --bg: #1c1c1e; --card: #2c2c2e; --ok: #63d07a; --bad: #ff8a80; } }
@@ -353,15 +353,17 @@ export const renderHtml = (summary, text) => {
   .impact { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--card); white-space: nowrap; }
   .impact-critical, .impact-serious { color: var(--bad); }
   button { font: inherit; font-size: 13px; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 1px 10px; cursor: pointer; }
-  pre { margin: 16px 0 0; padding: 14px 16px; background: var(--card); border-radius: 10px; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; }
+  pre { margin: 8px 0 0; padding: 14px 16px; background: var(--card); border-radius: 10px; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
   @media print { body { padding: 0; } a { text-decoration: none; } button { display: none; } }
 </style>
 </head>
 <body>
 <main>
-  <h1>Test summary</h1>
-  <div class="muted">${escape(sites.join(', '))} · ${escape(formatDate(summary.date))} · <a href="index.html">Full report</a> · <button type="button" id="copy">Copy as text</button></div>
-  <pre id="text" hidden>${escape(text)}</pre>
+  <h1>Knowit Suite test summary</h1>
+  <div class="muted">${escape(sites.join(', '))} · ${escape(formatDate(summary.date))} · ${reportUrl ? `<a href="${escape(reportUrl)}">Full report</a> · ` : ''}<button type="button" id="copy">Copy as text</button></div>
+  <details id="text-details"><summary class="muted">Plain text</summary><pre id="text">${escape(text)}</pre></details>
 
   <div class="cards">
     <div class="card"><b>${summary.pages}</b>pages tested</div>
@@ -378,8 +380,8 @@ export const renderHtml = (summary, text) => {
 <script>
   document.getElementById('copy').addEventListener('click', async ({ currentTarget: button }) => {
     // Shown too, to see what was copied
+    document.getElementById('text-details').open = true;
     const text = document.getElementById('text');
-    text.hidden = false;
     try {
       await navigator.clipboard.writeText(text.textContent);
     } catch {
@@ -420,7 +422,7 @@ export default class SummaryReporter {
     fs.mkdirSync(this.folder, { recursive: true });
     fs.writeFileSync(
       path.join(this.folder, 'summary.html'),
-      renderHtml(summary, text)
+      renderHtml(summary, text, process.env.REPORT_URL)
     );
     fs.writeFileSync(path.join(this.folder, 'summary.txt'), text);
     console.log(`\n${text}`);

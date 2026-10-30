@@ -96,6 +96,7 @@ test('groups issues across pages and counts failed tests', () => {
   );
   assert.match(text, /• `x <b> y` \(error\): 1 page\n {3}\/b\/\n/);
   assert.doesNotMatch(text, /Lighthouse|Other failed tests|Full report/);
+  assert.doesNotMatch(html, /Full report/);
 });
 
 test('text summary of a clean run, with a report link', () => {
@@ -110,9 +111,14 @@ test('text summary of a clean run, with a report link', () => {
   );
   assert.doesNotMatch(text, /Accessibility issues|Console errors/);
   assert.match(text, /🔗 Full report: https:\/\/ci\.example\.com\/report\/\n$/);
-  // The HTML summary copies the same text
+  assert.match(
+    html,
+    /<a href="https:\/\/ci\.example\.com\/report\/">Full report<\/a>/
+  );
+  // The HTML summary copies the same text, collapsed so previews don't show it
+  assert.match(html, /<details id="text-details"><summary/);
   const copied = html
-    .match(/<pre id="text" hidden>([\s\S]*?)<\/pre>/)[1]
+    .match(/<pre id="text">([\s\S]*?)<\/pre>/)[1]
     .replaceAll('&amp;', '&');
   assert.equal(copied, text);
 });
