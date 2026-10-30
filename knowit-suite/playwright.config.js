@@ -54,7 +54,8 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  /* The summary writes summary.html into the HTML report after it, so keep this order */
+  reporter: [['html'], ['./knowit-suite/reporters/summary.js']],
   ...playwright,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {

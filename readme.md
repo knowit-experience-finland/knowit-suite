@@ -204,6 +204,40 @@ To skip both desktop and mobile regression for the selected pages:
 TEST_URL="https://example.com/some-page/" npx playwright test accessibility errors lighthouse
 ```
 
+### Testing pages from the sitemap
+
+`URL_CATEGORY=sitemap` adds a sample of the sitemap's pages to the configured ones:
+
+```bash
+URL_CATEGORY=sitemap npx playwright test
+SITEMAP_LIMIT=200 URL_CATEGORY=sitemap npx playwright test accessibility errors
+```
+
+- The sample is 50 pages by default (`sitemapLimit`); `SITEMAP_LIMIT` overrides it, `0` tests all pages. It takes turns between kinds of pages, grouped by URL pattern (e.g. `/news/2024/05/some-title/` and `/news/2023/11/other-title/` are one kind), so 50 pages aren't 50 news articles. Path parts with numbers (dates, magazine issues) count as the same, and the most common kinds go first if there are more kinds than the limit.
+- The sitemap pages run in the accessibility and console error tests. Screenshots, desktop and mobile, stay with the configured pages, as every page would need a baseline; `sitemapRegression: true` adds the sitemap pages to them too. Lighthouse uses its own list.
+- A page that is both configured and in the sample is tested once. The run starts with e.g. `Sitemap: read 1606 pages, testing 50 (limit 50)`.
+- The sitemap is `BASE_URL/sitemap.xml`, or `BASE_URL/sitemap_index.xml` if there is none. Sitemap indexes are followed; only pages on `BASE_URL`'s domain are tested. When sampling, only the first of numbered sitemaps (`post-sitemap2.xml`…) is read.
+
+`sitemap()` puts the sample in any URL list, e.g. a larger one, a custom sitemap, the always-tested `''` category, or Lighthouse:
+
+```js
+import { sitemap } from './knowit-suite/helpers/sitemap.js';
+
+export default {
+  urls: {
+    '': ['/'],
+    sitemap: [sitemap({ limit: 100, url: '/page-sitemap.xml' })],
+  },
+  lighthouseUrls: { '': ['/', sitemap({ limit: 5 })] },
+};
+```
+
+### Summary
+
+Every run also writes `playwright-report/summary.html`, a one-page overview to share e.g. with a client: how many pages were tested, accessibility issues grouped by rule and console errors grouped by message (each with the number of pages and example pages), Lighthouse scores, and other failed tests. The HTML report gets a bar at the top with the totals and a link to the summary, and the summary links back to the report, so publish the whole `playwright-report/` folder. A project that sets its own `reporter` in `playwright` gets it by adding `['./knowit-suite/reporters/summary.js']` after the HTML reporter.
+
+`playwright-report/summary.txt` is the same summary as short plain text, also printed at the end of the run and copied with the summary's Copy as text button, to paste anywhere: chat, tickets, CI. `REPORT_URL` adds a link to the full report.
+
 ## URLs
 
 URLs to test are managed in `knowit-suite.config.js`. Paths starting with `/` are prefixed with `BASE_URL`, full URLs are used as is.
@@ -245,7 +279,7 @@ const allBlocks = {
 
 The base URL for tests can be changed with `BASE_URL` environment variable, allowing us to test the same paths in multiple environments.
 
-The URL category for tests can be defined with `URL_CATEGORY` environment variable. This affects which URLs are tested in test.
+The URL category for tests can be defined with `URL_CATEGORY` environment variable, or a project's default with `urlCategory` in `knowit-suite.config.js`. This affects which URLs are tested in test.
 
 - URLs in empty category `''` are always tested.
 - URLs in `'test'` category are tested when the URL category is set to `test` (the default, also used for unknown categories).
@@ -275,6 +309,10 @@ See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for 
 ### Unreleased
 
 - New: `TEST_URL` runs the shared tests on the given pages instead of the configured URL lists, e.g. `TEST_URL="https://example.com/some-page/" npx playwright test`. Works without `BASE_URL`.
+- New: `URL_CATEGORY=sitemap` adds a varied sample of the sitemap's pages (`SITEMAP_LIMIT`, default 50) to the accessibility and console error tests; `sitemap()` puts one in any URL list, `sitemapRegression: true` in the screenshots too. Based on Ville Huumo's sitemap scan.
+- New: `urlCategory` and `sitemapLimit` settings for a project's default URL category and sitemap sample size; `URL_CATEGORY` and `SITEMAP_LIMIT` override them.
+- New: `playwright-report/summary.txt`, the summary as plain text. `REPORT_URL` adds a link to the full report.
+- New: `playwright-report/summary.html`, a one-page overview of each run.
 
 ### 2.0.0 – 2026-10-22
 
