@@ -10,9 +10,6 @@ export default {
     // prettier-ignore
     '': [
       '/',
-      '/referenssit/',
-      '/yhteystiedot/',
-      '/tietoa-meista/',
     ],
     test: [],
     production: [],
