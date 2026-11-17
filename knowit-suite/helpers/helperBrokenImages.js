@@ -27,13 +27,17 @@ const getImageUrls = (page) =>
   });
 
 // Error message for a broken image, or null. Some servers don't answer HEAD,
-// so a failed HEAD is retried as a GET of the first byte.
+// with an error status or by dropping the connection, so a failed HEAD is
+// retried as a GET of the first byte.
 const checkImage = async (page, url) => {
   try {
-    const head = await page.request.head(url);
-    if (head.ok()) {
+    if ((await page.request.head(url)).ok()) {
       return null;
     }
+  } catch {
+    // Retried below
+  }
+  try {
     const get = await page.request.get(url, {
       headers: { Range: 'bytes=0-0' },
     });
