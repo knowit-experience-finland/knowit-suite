@@ -33,6 +33,21 @@ getUrls().forEach((url) => {
           body: reportHTML,
           contentType: 'text/html',
         });
+        // For the summary (reporters/summary.js)
+        await testInfo.attach('accessibility-violations.json', {
+          body: JSON.stringify(
+            accessibilityScanResults.violations.map(
+              ({ id, impact, help, helpUrl, nodes }) => ({
+                id,
+                impact,
+                help,
+                helpUrl,
+                elements: nodes.length,
+              })
+            )
+          ),
+          contentType: 'application/json',
+        });
       }
 
       expect(violations).toEqual(0);

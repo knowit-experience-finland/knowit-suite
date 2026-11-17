@@ -42,6 +42,13 @@ getUrls().forEach((url) => {
             .join('\n'),
           contentType: 'text/plain',
         });
+        // For the summary (reporters/summary.js)
+        await testInfo.attach('console-errors.json', {
+          body: JSON.stringify(
+            logs.map(({ type, message }) => ({ type, message }))
+          ),
+          contentType: 'application/json',
+        });
       }
 
       expect(logs.length).toBe(0);
