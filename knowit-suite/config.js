@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import suiteConfig from '../knowit-suite.config.js';
+import { answerCookiebot } from './helpers/helperCookiebotBlock.js';
 import { getSitemapPages, sitemap } from './helpers/sitemap.js';
 
 const BASE_URL = (process.env.BASE_URL ?? '').replace(/\/+$/, '');
@@ -61,6 +62,7 @@ for (const url of testUrls ?? []) {
  * @property {number} [sitemapLimit] Pages in a `sitemap()` sample that has no limit of its own, 0 for all. Default 50; SITEMAP_LIMIT overrides both.
  * @property {boolean} [sitemapRegression] Screenshots, desktop and mobile, also of the `sitemap()` pages. Off by default: each page needs a baseline.
  * @property {Record<string, number>} [lighthouseThresholds] Minimum Lighthouse scores per category, 0–100.
+ * @property {((args: { page: import('@playwright/test').Page, consent: 'deny' | 'grant' }) => Promise<void>) | null} [lighthouseConsent] Answers the site's real cookie banner before each Lighthouse audit, so scores don't depend on where the tests run. Defaults to answering Cookiebot; null to skip.
  * @property {string} [menuToggleSelector] Mobile menu toggle; the menu is opened for a second screenshot.
  * @property {string[]} [spinnerSelectors] Loaders to wait for before screenshots.
  * @property {string[]} [axeExclude] Selectors left out of the accessibility scan.
@@ -95,6 +97,7 @@ export const config = {
     'best-practices': 50,
     seo: 50,
   },
+  lighthouseConsent: answerCookiebot,
   menuToggleSelector: '',
   spinnerSelectors: [],
   axeExclude: [],

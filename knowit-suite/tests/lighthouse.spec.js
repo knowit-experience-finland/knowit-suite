@@ -32,10 +32,13 @@ const audit = async (url, port) => {
       const { cookies } = JSON.parse(fs.readFileSync(storageState, 'utf8'));
       await context.addCookies(cookies);
     }
-    if (getUnlockStep(url)) {
-      // Unlock once; cookies it sets stay in this context
+    // Unlock and answer the real cookie banner once (not the stub of the other
+    // tests, so its cost is in the score); cookies set here stay in this context
+    const { lighthouseConsent } = config;
+    if (getUnlockStep(url) || lighthouseConsent) {
       const page = await context.newPage();
       await openUrl(page, url);
+      await lighthouseConsent?.({ page, consent: config.consent });
       await page.close();
     }
 

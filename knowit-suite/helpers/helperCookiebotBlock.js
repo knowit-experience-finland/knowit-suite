@@ -54,3 +54,43 @@ export const stubCookiebot = async (context, { consent = 'deny' } = {}) => {
     return route.fulfill({ status: 204, body: '' });
   });
 };
+
+/**
+ * Answer the real Cookiebot like `consent` says, so the consent is stored in
+ * the browser. Does nothing on pages without Cookiebot. The default
+ * `lighthouseConsent`.
+ *
+ * @param {{ page: import('@playwright/test').Page, consent: 'deny' | 'grant' }} args
+ */
+export const answerCookiebot = async ({ page, consent }) => {
+  const script = 'script[src*="cookiebot.com"], script[src*="cookiebot.eu"]';
+  if (!(await page.locator(script).count())) {
+    return;
+  }
+  await page
+    .waitForFunction(() => window.Cookiebot?.submitCustomConsent, null, {
+      timeout: 10_000,
+    })
+    .catch(() => {
+      throw new Error(
+        `Cookiebot didn't start on ${page.url()}. Fix it, or give lighthouseConsent your own step (or null).`
+      );
+    });
+  const granted = consent === 'grant';
+  await page.evaluate(
+    (optIn) => window.Cookiebot.submitCustomConsent(optIn, optIn, optIn),
+    granted
+  );
+  // Cookiebot stores the answer asynchronously, and an earlier cookie (e.g.
+  // regional auto-consent) may exist, so wait for this explicit answer
+  await page.waitForFunction((optIn) => {
+    // Only this cookie: decoding others, e.g. "discount=20%", can throw
+    const value = document.cookie
+      .split('; ')
+      .find((cookie) => cookie.startsWith('CookieConsent='))
+      ?.slice('CookieConsent='.length);
+    return decodeURIComponent(value ?? '').includes(
+      `preferences:${optIn},statistics:${optIn},marketing:${optIn},method:'explicit'`
+    );
+  }, granted);
+};
