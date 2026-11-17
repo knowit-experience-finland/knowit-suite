@@ -238,7 +238,7 @@ export default {
 
 ### Summary
 
-Every run also writes `playwright-report/summary.html`, a one-page overview to share e.g. with a client: how many pages were tested, accessibility issues grouped by rule and console errors grouped by message (each with the number of pages and example pages), Lighthouse scores, and other failed tests. The HTML report gets a bar at the top with the totals and a link to the summary, and the summary links back to the report, so publish the whole `playwright-report/` folder. A project that sets its own `reporter` in `playwright` gets it by adding `['./knowit-suite/reporters/summary.js']` after the HTML reporter.
+Every run also writes `summary.html` into the HTML report's folder (`playwright-report/` unless the HTML reporter's `outputFolder` or `PLAYWRIGHT_HTML_OUTPUT_DIR` says otherwise), a one-page overview to share e.g. with a client: how many pages were tested, accessibility issues grouped by rule and console errors grouped by message (each with the number of pages and example pages), Lighthouse scores, and other failed tests. A run that fails outside the tests, e.g. when a spec doesn't load or the run times out, is marked failed too, with the reason. The HTML report gets a bar at the top with the totals and a link to the summary, and the summary links back to the report, so publish the whole `playwright-report/` folder. A project that sets its own `reporter` in `playwright` gets it by adding `['./knowit-suite/reporters/summary.js']` after the HTML reporter.
 
 `playwright-report/summary.txt` is the same summary as short plain text, also printed at the end of the run and copied with the summary's Copy as text button, to paste anywhere: chat, tickets, CI. `REPORT_URL` adds a link to the full report.
 

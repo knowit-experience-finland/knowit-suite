@@ -5,10 +5,23 @@ import path from 'node:path';
 import { mock, test } from 'node:test';
 import SummaryReporter from '../knowit-suite/reporters/summary.js';
 
-const run = (results, env = {}) => {
+const run = (
+  results,
+  env = {},
+  {
+    status,
+    errors = [],
+    reporter: reporters,
+    folder = 'playwright-report',
+  } = {}
+) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'summary-'));
   const reporter = new SummaryReporter();
-  reporter.onBegin({ configFile: path.join(dir, 'playwright.config.js') });
+  reporter.onBegin({
+    configFile: path.join(dir, 'playwright.config.js'),
+    reporter: reporters,
+  });
+  errors.forEach((error) => reporter.onError(error));
   results.forEach(
     ({ id, url, status = 'passed', attachments = {}, errors = [] }) =>
       reporter.onTestEnd(
@@ -31,14 +44,13 @@ const run = (results, env = {}) => {
   const log = mock.method(console, 'log', () => {});
   Object.assign(process.env, env);
   try {
-    reporter.onEnd();
+    reporter.onEnd(status && { status });
   } finally {
     Object.keys(env).forEach((key) => delete process.env[key]);
     log.mock.restore();
   }
-  const read = (file) =>
-    fs.readFileSync(path.join(dir, 'playwright-report', file), 'utf8');
-  return { html: read('summary.html'), text: read('summary.txt') };
+  const read = (file) => fs.readFileSync(path.join(dir, folder, file), 'utf8');
+  return { dir, html: read('summary.html'), text: read('summary.txt') };
 };
 
 const contrast = {
@@ -307,4 +319,59 @@ test('text summary survives a violation without an impact', () => {
     },
   ]);
   assert.match(text, /\nOther\n• Elements must/);
+});
+
+test('a run that fails outside the tests is not shown as passed', () => {
+  // E.g. a syntax error in a spec: no tests run, Playwright exits 1
+  const { html, text } = run(
+    [],
+    {},
+    {
+      status: 'failed',
+      errors: [{ message: '\u001b[31mError: No tests found\u001b[39m\nmore' }],
+    }
+  );
+
+  assert.match(text, /^❌ Test summary/);
+  assert.match(text, /\n⚠️ The run failed outside the tests\n/);
+  assert.match(
+    text,
+    /🧪 Other failed tests\n• Run error: `Error: No tests found`\n/
+  );
+  assert.match(html, /<p class="low">The run failed outside the tests<\/p>/);
+  assert.match(html, /<code>Error: No tests found<\/code>/);
+});
+
+test('a timed out run is not shown as passed, and failed tests need no note', () => {
+  const passed = [{ id: 'ok', url: 'https://example.com/' }];
+  const timedOut = run(passed, {}, { status: 'timedout' }).text;
+  assert.match(timedOut, /^❌ Test summary/);
+  assert.match(timedOut, /⚠️ The run timed out before all tests finished/);
+
+  const failed = run(
+    [{ id: 'x', url: 'https://example.com/', status: 'failed' }],
+    {},
+    { status: 'failed' }
+  ).text;
+  assert.match(failed, /^❌ Test summary/);
+  assert.doesNotMatch(failed, /⚠️/);
+
+  assert.match(run(passed, {}, { status: 'passed' }).text, /^✅ Test summary/);
+});
+
+test("writes into the HTML report's own outputFolder", () => {
+  const folder = path.join('reports', 'html');
+  const { dir, html } = run(
+    [{ id: 'ok', url: 'https://example.com/' }],
+    {},
+    {
+      reporter: [
+        ['html', { outputFolder: folder }],
+        ['./knowit-suite/reporters/summary.js'],
+      ],
+      folder,
+    }
+  );
+  assert.match(html, /Knowit Suite test summary/);
+  assert.equal(fs.existsSync(path.join(dir, 'playwright-report')), false);
 });

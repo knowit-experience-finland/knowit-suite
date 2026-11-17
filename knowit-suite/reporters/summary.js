@@ -85,8 +85,19 @@ const pagePaths = (pages) => {
   ].join(', ');
 };
 
-// Totals and grouped issues of a run, shared by both summaries
-export const collect = (results) => {
+const RUN_NOTES = {
+  timedout: 'The run timed out before all tests finished',
+  interrupted: 'The run was interrupted before all tests finished',
+  failed: 'The run failed outside the tests',
+};
+
+const firstLine = (message) =>
+  stripVTControlCharacters(message ?? '').split('\n')[0];
+
+// Totals and grouped issues of a run, shared by both summaries. `status` is
+// the run's own, which fails e.g. when no tests were found, and `errors` the
+// ones outside any test, from the reporter's onError.
+export const collect = (results, { status, errors: runErrors = [] } = {}) => {
   const pages = new Set();
   const accessibility = new Map();
   const consoleErrors = new Map();
@@ -130,11 +141,15 @@ export const collect = (results) => {
       !errors &&
       !scores
     ) {
-      const message = stripVTControlCharacters(
-        result.errors[0]?.message ?? result.status
-      ).split('\n')[0];
+      const message = firstLine(result.errors[0]?.message ?? result.status);
       failures.push({ title: test.title, url, message });
     }
+  }
+  for (const error of runErrors) {
+    failures.push({
+      title: 'Run error',
+      message: firstLine(error.message ?? error.value),
+    });
   }
 
   const pagesWith = (map) =>
@@ -159,7 +174,14 @@ export const collect = (results) => {
     }
   }
 
+  const runStatus = status ?? (failed ? 'failed' : 'passed');
   return {
+    status: runStatus,
+    // Why the run failed, when the tests don't already say so
+    runNote:
+      runStatus === 'passed' || (runStatus === 'failed' && failed)
+        ? null
+        : (RUN_NOTES[runStatus] ?? RUN_NOTES.failed),
     sites: [...new Set([...pages].map((url) => new URL(url).host))],
     date: new Date(),
     pages: pages.size,
@@ -195,7 +217,8 @@ export const renderText = (summary, reportUrl) => {
   const icon = (problems, own) => (problems ? own : '✅');
   const skipped = summary.skipped ? `, ${summary.skipped} skipped` : '';
   const lines = [
-    `${summary.failed ? '❌' : '✅'} Test summary${summary.sites.length ? `: ${summary.sites.join(', ')}` : ''} · ${formatDate(summary.date)}`,
+    `${summary.status === 'passed' && !summary.failed ? '✅' : '❌'} Test summary${summary.sites.length ? `: ${summary.sites.join(', ')}` : ''} · ${formatDate(summary.date)}`,
+    ...(summary.runNote ? ['', `⚠️ ${summary.runNote}`] : []),
     '',
     `📄 ${plural(summary.pages, 'page')} tested`,
     `${icon(summary.failed, '🧪')} ${summary.failed} of ${plural(summary.tests, 'test')} failed${skipped}`,
@@ -363,6 +386,7 @@ export const renderHtml = (summary, text, reportUrl) => {
 <main>
   <h1>Knowit Suite test summary</h1>
   <div class="muted">${escape(sites.join(', '))} · ${escape(formatDate(summary.date))} · ${reportUrl ? `<a href="${escape(reportUrl)}">Full report</a> · ` : ''}<button type="button" id="copy">Copy as text</button></div>
+  ${summary.runNote ? `<p class="low">${escape(summary.runNote)}</p>` : ''}
   <details id="text-details"><summary class="muted">Plain text</summary><pre id="text">${escape(text)}</pre></details>
 
   <div class="cards">
@@ -399,25 +423,43 @@ export const renderHtml = (summary, text, reportUrl) => {
 };
 
 export default class SummaryReporter {
-  constructor({ outputFolder = 'playwright-report' } = {}) {
+  // outputFolder only to write elsewhere than the HTML report
+  constructor({ outputFolder } = {}) {
     this.outputFolder = outputFolder;
     // Last attempt of each test, so retries count once
     this.results = new Map();
+    this.errors = [];
   }
 
+  // The HTML report's folder, found like the HTML reporter finds it
   onBegin(config) {
-    this.folder = path.resolve(
-      path.dirname(config.configFile ?? path.join(process.cwd(), 'x')),
-      process.env.PLAYWRIGHT_HTML_OUTPUT_DIR ?? this.outputFolder
+    const configDir = path.dirname(
+      config.configFile ?? path.join(process.cwd(), 'x')
     );
+    const env =
+      process.env.PLAYWRIGHT_HTML_OUTPUT_DIR ||
+      process.env.PLAYWRIGHT_HTML_REPORT;
+    const html = config.reporter?.find(([name]) => name === 'html')?.[1];
+    this.folder = this.outputFolder
+      ? path.resolve(configDir, this.outputFolder)
+      : env
+        ? path.resolve(env)
+        : path.resolve(configDir, html?.outputFolder ?? 'playwright-report');
   }
 
   onTestEnd(test, result) {
     this.results.set(test.id, { test, result });
   }
 
-  onEnd() {
-    const summary = collect([...this.results.values()]);
+  onError(error) {
+    this.errors.push(error);
+  }
+
+  onEnd(result) {
+    const summary = collect([...this.results.values()], {
+      status: result?.status,
+      errors: this.errors,
+    });
     const text = renderText(summary, process.env.REPORT_URL);
     fs.mkdirSync(this.folder, { recursive: true });
     fs.writeFileSync(
