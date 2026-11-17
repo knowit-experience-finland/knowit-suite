@@ -24,7 +24,7 @@ Currently, the suite includes the following tests.
 - Accessibility `accessibility.spec.js` with [AXE](https://npmjs.org/@axe-core/playwright): WCAG A and AA plus axe's best-practice rules by default; `axeTags` changes the list.
 - Regression `regression.spec.js` compares screenshots using Playwright's [Visual Comparison](https://playwright.dev/docs/test-snapshots).
 - Mobile regression `regression-mobile.spec.js` takes mobile screenshots (320px wide), also with the menu open when `menuToggleSelector` is set, and fails if the page scrolls sideways (WCAG 1.4.10 Reflow).
-- Errors `errors.spec.js` checks for JavaScript console errors and uncaught exceptions.
+- Errors `errors.spec.js` checks for JavaScript console errors, uncaught exceptions and broken images (also lazy-loaded ones).
 - Lighthouse `lighthouse.spec.js` audits `lighthouseUrls` on mobile (median of 3 runs) against `lighthouseThresholds`. Thresholds never change by themselves; when scores clearly exceed them, the test suggests stricter values.
 
 ## Structure
@@ -249,6 +249,10 @@ To test new URLs with the shared specs, update `knowit-suite.config.js`. Custom 
 See [Playwright's documentation](https://playwright.dev/docs/writing-tests) for more information on writing tests.
 
 ## Changelog
+
+### Unreleased
+
+- New: the errors test fails on broken images, also lazy-loaded ones and every `srcset` size. Each image URL is checked with a HEAD request, so nothing is downloaded; usually under a second per page, slower with image CDNs that resize on the fly.
 
 ### 2.0.0 - 2026-10-27
 
