@@ -3,8 +3,10 @@ import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
 import { config } from './config.js';
 
-if (!process.env.BASE_URL) {
-  throw new Error('BASE_URL is not set. Copy .env.example to .env.');
+if (!process.env.BASE_URL && !process.env.TEST_URL?.trim()) {
+  throw new Error(
+    'Set BASE_URL in .env or pass TEST_URL to test specific pages.'
+  );
 }
 
 const { playwright } = config;
